@@ -1,0 +1,78 @@
+<div class="scroll-area">
+      <div class="list-header">
+        <h1>Saisonküche</h1>
+        <div class="season-region-button sk-header-pill" id="sk-region-pill">
+          <span>🇩🇪</span> Deutschland <i class="ti ti-chevron-down" aria-hidden="true"></i>
+        </div>
+        <span class="kb-month-pill sk-header-pill" id="kb-month-pill" hidden>–</span>
+      </div>
+
+      <!-- Umschalter Saisonkalender ⇄ Kochbuch -->
+      <div class="seg-switch g9" role="tablist" aria-label="Ansicht wählen">
+        <div class="seg-switch-track span-9">
+          <button class="seg-btn" role="tab" data-view="saison" onclick="skSetView('saison')">Saisonkalender</button>
+          <button class="seg-btn" role="tab" data-view="kochbuch" onclick="skSetView('kochbuch')">Kochbuch</button>
+          <span class="seg-indicator" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <!-- ───────── Saisonkalender ───────── -->
+      <section id="pane-saison" class="sk-pane">
+        <!-- Scanner (links) + Suche über die restliche Breite -->
+        <div class="g9 sk-toprow">
+          <button class="list-scan-btn span-2" onclick="scanOpenChooser()" aria-label="Produkt scannen oder Code eingeben">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="22" height="22" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg >
+            <span class="list-scan-lbl">Scannen</span>
+          </button>
+          <div class="search-box sk-search-box span-7">
+            <i class="ti ti-search" style="color:var(--muted);font-size:16px" aria-hidden="true"></i>
+            <input type="text" placeholder="Lebensmittel suchen..." oninput="filterSeason(this.value)" />
+          </div>
+        </div>
+        <div class="section-label">In Saison</div>
+        <div class="season-list" id="season-in">
+          <p class="sub" style="padding:12px">Lädt…</p>
+        </div>
+        <div class="section-label" id="season-out-label">Nicht in Saison</div>
+        <div class="season-list" id="season-out"></div>
+        <p style="font-size:12px;color:var(--muted);margin-top:12px;line-height:1.5">Tippe auf ein Lebensmittel für Details, Herkunftsländer, den Jahreskalender und passende Rezepte.</p>
+      </section>
+
+      <!-- ───────── Kochbuch ───────── -->
+      <section id="pane-kochbuch" class="sk-pane" style="display:none">
+        <!-- Zeile 1: Gespeichert (links) + Suche über die restliche Breite -->
+        <div class="g9 kb-toprow">
+          <button class="kb-saved-btn span-2" onclick="kbOvOpen('gespeichert')" aria-label="Gespeicherte Rezepte">
+            <span class="kb-saved-heart">♥</span>
+            <span class="kb-saved-lbl">Gespeichert</span>
+            <span class="kb-saved-count" id="kb-saved-count" hidden>0</span>
+          </button>
+          <div class="search-box kb-search-box span-7">
+            <i class="ti ti-search" style="color:var(--muted);font-size:16px" aria-hidden="true"></i>
+            <input type="search" id="kb-search" placeholder="Rezept oder Zutat …" oninput="kbSetSearch(this.value)" />
+          </div>
+        </div>
+
+        <!-- Zeile 2: drei gleich große Kacheln (je 3 Spalten), jeweils mit Info-Knopf -->
+        <div class="g9 kb-tiles">
+          <div class="kb-tile-wrap span-3">
+            <button class="kb-tile kb-tile--today" onclick="kbOpenToday()"><span class="kb-tile-title">Rezept des Tages</span></button>
+            <button class="kb-tile-info" onclick="kbInfo('heute')" aria-label="So funktioniert: Rezept des Tages"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg ></button>
+          </div>
+          <div class="kb-tile-wrap span-3">
+            <button class="kb-tile kb-tile--cat" onclick="kbOvOpen('kategorien')"><span class="kb-tile-title">Kategorien</span></button>
+            <button class="kb-tile-info" onclick="kbInfo('kategorien')" aria-label="So funktioniert: Kategorien"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg ></button>
+          </div>
+          <div class="kb-tile-wrap span-3">
+            <button class="kb-tile kb-tile--import" onclick="showRecipeImport()"><span class="kb-tile-title">Rezept importieren</span></button>
+            <button class="kb-tile-info" onclick="kbInfo('import')" aria-label="So funktioniert: Rezept importieren"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="14" height="14" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" /></svg ></button>
+          </div>
+        </div>
+
+        <div class="section-label" id="kb-list-label">Alle Rezepte · nach Saison sortiert</div>
+        <div id="kb-list" class="kb-list"></div>
+
+        <p class="kb-footnote">Die Saison-Ampel jedes Rezepts wird live aus dem Saisonkalender für den aktuellen Monat berechnet. Gewürze, Öl und Getreide zählen als neutrale Vorratszutaten.</p>
+      </section>
+      <div style="height:12px"></div>
+    </div>

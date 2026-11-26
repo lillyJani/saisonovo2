@@ -1,0 +1,119 @@
+<div class="scroll-area">
+      <!-- Kopf: Name oben links, Einstellungen rechts (9-Spalten-Raster: 6 + 3) -->
+      <div class="pf-top g9">
+        <div class="pf-name-wrap span-6">
+          <h1 class="pf-name" id="profile-name">Benutzer</h1>
+          <div class="pf-subtitle" id="profile-subtitle">Neu in Saisonovo</div>
+        </div>
+        <div class="span-3 pf-settings-wrap">
+          <button id="edit-btn" class="pf-gear-btn" onclick="toggleEditMode()" aria-label="Einstellungen öffnen" title="Einstellungen">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" width="22" height="22" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg >
+          </button>
+        </div>
+      </div>
+
+      <!-- View Mode -->
+      <div id="profile-view">
+        <!-- Avatar -->
+        <div class="pf-avatar-stage">
+          <div class="pf-avatar" id="profile-avatar">M</div>
+          <div class="pf-avatar-level" id="pf-avatar-level"></div>
+        </div>
+
+        <!-- Level -->
+        <div class="pf-level-head" id="gm-level-head"></div>
+
+        <!-- Level-Details -->
+        <div class="gm-level-card" id="gm-level-card"></div>
+
+        <!-- Abzeichen-Verzeichnis -->
+        <div class="pf-section-head">
+          <h2>Abzeichen</h2>
+          <span class="pf-section-count" id="gm-badge-count"></span>
+        </div>
+        <div id="gm-badges" class="gm-badge-directory"></div>
+
+        <h2>Deine Wirkung</h2>
+        <div class="card gm-impact-card" id="gm-impact-card"></div>
+
+        <div class="profile-score-card">
+          <div class="stat-label">Deine Historie</div>
+          <div class="stat-grid-3">
+            <div class="profile-score-cell active">
+              <div class="profile-score-cell-label">Alternativen</div>
+              <div class="profile-score-cell-value" id="score-swaps">0</div>
+            </div>
+            <div class="profile-score-cell active">
+              <div class="profile-score-cell-label">Einkäufe</div>
+              <div class="profile-score-cell-value" id="score-purchases">0</div>
+            </div>
+            <div class="profile-score-cell active">
+              <div class="profile-score-cell-label">Challenges</div>
+              <div class="profile-score-cell-value" id="score-challenges-completed">0</div>
+            </div>
+          </div>
+          <div class="stat-grid-3 gm-history-extra" id="gm-history-extra"></div>
+          <div class="profile-score-note" id="score-note"></div>
+        </div>
+
+        <h2>Ernährungsart</h2>
+        <div class="profile-diet-pills" id="profile-diet-pills"></div>
+
+        <h2>Deine Challenges</h2>
+        <div id="profile-challenges-view"></div>
+      </div>
+
+      <!-- Einstellungen: freischwebendes Fenster in der Bildschirmmitte -->
+      <div id="pf-settings-overlay" class="center-modal pf-settings" style="display:none" onclick="toggleEditMode()">
+        <div class="center-modal-card pf-settings-card" role="dialog" aria-modal="true" aria-labelledby="pf-settings-title" onclick="event.stopPropagation()">
+          <div class="pf-settings-head">
+            <h2 id="pf-settings-title">Einstellungen</h2>
+            <button class="center-modal-close pf-settings-close" onclick="toggleEditMode()" aria-label="Einstellungen schließen">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="18" height="18" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg >
+            </button>
+          </div>
+          <div id="profile-edit" class="pf-settings-body">
+        <div class="avatar-edit">
+          <div class="avatar" id="edit-avatar" style="width:64px;height:64px;font-size:28px">M</div>
+          <div>
+            <h2>Profilbild</h2>
+            <p class="sub avatar-edit-sub">Wähle ein Emoji oder einen Buchstaben</p>
+            <input type="text" id="edit-avatar-input" maxlength="1" placeholder="A" class="avatar-edit-input" />
+          </div>
+        </div>
+
+        <h2>Dein Name</h2>
+        <input type="text" id="edit-name" placeholder="Name" class="edit-input" />
+
+        <h2>Ernährungsart</h2>
+        <p class="sub">Wähle alles, was auf dich zutrifft.</p>
+        <div class="auswahl-gruppe" id="edit-diet-pills">
+          <div class="auswahl" onclick="togglePill(this)">Alles</div>
+          <div class="auswahl" onclick="togglePill(this)">Omnivoren</div>
+          <div class="auswahl" onclick="togglePill(this)">Flexitarier</div>
+          <div class="auswahl" onclick="togglePill(this)">Pescetarier</div>
+          <div class="auswahl" onclick="togglePill(this)">Vegetarier</div>
+          <div class="auswahl" onclick="togglePill(this)">Veganer</div>
+          <div class="auswahl" onclick="togglePill(this)">Frutarier</div>
+          <div class="auswahl" onclick="togglePill(this)">Low-Carb/Keto</div>
+          <div class="auswahl" onclick="togglePill(this)">Kein Rindfleisch</div>
+          <div class="auswahl" onclick="togglePill(this)">Kein Schwein</div>
+          <div class="auswahl" onclick="togglePill(this)">Kein Fisch</div>
+          <div class="auswahl" onclick="togglePill(this)">Laktosefrei</div>
+          <div class="auswahl" onclick="togglePill(this)">Glutenfrei</div>
+        </div>
+
+        <h2>Darstellung</h2>
+        <div class="card">
+          <div class="toggle-row">
+            <span>Dunkelmodus</span>
+            <div class="toggle" id="dark-mode-toggle" onclick="toggleDarkMode()"></div>
+          </div>
+        </div>
+          </div>
+          <div class="pf-settings-foot">
+            <button class="btn-primary" onclick="saveProfile()">Speichern</button>
+          </div>
+        </div>
+      </div>
+    </div>
