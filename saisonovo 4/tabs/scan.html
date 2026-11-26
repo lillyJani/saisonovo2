@@ -1,0 +1,101 @@
+<div class="scroll-area">
+      <button class="scan-back" onclick="scanGoBack()" aria-label="Zurück zur Einkaufsliste">‹ Einkaufsliste</button>
+      <h1>Scannen</h1>
+      <p class="sub">Barcode scannen oder Barcode/PLU-Code manuell eingeben.</p>
+
+      <div class="scan-area" id="scan-area">
+        <video id="scan-video" class="scan-video" autoplay muted playsinline></video>
+        <div class="scan-corners">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+        </div>
+        <div class="scan-line" id="scan-line" style="display:none"></div>
+        <div class="scan-overlay" id="scan-overlay" onclick="startScanner()" style="cursor:pointer">
+          <svg class="scan-overlay-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+          </svg >
+          <p class="scan-overlay-text">Kamera starten, um Barcode zu scannen</p>
+        </div>
+      </div>
+
+      <p class="scan-status" id="scan-status"></p>
+
+      <div class="scan-controls">
+        <button class="scan-btn scan-btn-main" id="scan-start-btn" onclick="startScanner()">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+          </svg >
+          Kamera starten
+        </button>
+      </div>
+
+      <!-- Manuelle Eingabe: Barcode oder PLU-Code im selben Feld -->
+      <div class="plu-section">
+        <div class="plu-manual-row">
+          <div class="plu-input-row">
+            <input
+              type="text"
+              id="code-input"
+              class="plu-input"
+              placeholder="Barcode oder PLU (z. B. 4011)"
+              autocomplete="off"
+              inputmode="numeric"
+              pattern="\d*"
+              onkeydown="if(event.key==='Enter') submitCode()"
+            >
+            <button class="plu-btn" onclick="submitCode()">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg >
+              OK
+            </button>
+          </div>
+          <p class="plu-hint">4–5-stellig = PLU · länger = Barcode</p>
+        </div>
+      </div>
+      </div>
+
+      <div class="scan-result" id="scan-result">
+        <div class="scan-saison-banner" id="scan-saison-banner" style="display:none"></div>
+        <div class="scan-result-header">
+          <div class="scan-result-icon" id="scan-result-icon">🛒</div>
+          <div class="scan-result-info">
+            <div class="scan-result-name" id="scan-result-name">–</div>
+            <div class="scan-result-brand" id="scan-result-brand">–</div>
+          </div>
+          <div class="scan-result-score-badge" id="scan-ecoscore-badge">
+            <div class="scan-result-score-label">Öko-Score</div>
+            <div class="scan-result-score" id="scan-result-score">?</div>
+          </div>
+          <button class="modal-close-button scan-result-close" onclick="dismissScanResult()" aria-label="Ergebnis schließen">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg >
+          </button>
+        </div>
+        <div class="scan-detail-rows">
+          <div class="scan-detail-row">
+            <span class="scan-detail-label">Herkunft</span>
+            <span class="scan-detail-value" id="scan-origins">–</span>
+          </div>
+          <div class="scan-detail-row" id="scan-saison-row" style="display:none">
+            <span class="scan-detail-label">Saisonalität</span>
+            <span class="scan-detail-value" id="scan-saison">–</span>
+          </div>
+          <div class="scan-detail-row">
+            <span class="scan-detail-label">Kategorie</span>
+            <span class="scan-detail-value" id="scan-category">–</span>
+          </div>
+          <div class="scan-detail-row">
+            <span class="scan-detail-label">Nutri-Score</span>
+            <span class="scan-detail-value" id="scan-nutriscore">–</span>
+          </div>
+        </div>
+        <div id="scan-saison-extra"></div>
+        <div class="scan-success-message" id="scan-success-message"></div>
+        <div id="scan-gm-extra" class="scan-gm-extra"></div>
+        <button class="scan-add-button" id="scan-add-btn">
+          + Zur Einkaufsliste hinzufügen
+        </button>
+      </div>
+    </div>

@@ -1,0 +1,1430 @@
+{
+  "_hinweis": "Saisonovo-Kochbuch. Zutatennamen sind bewusst so gewählt, dass sie im Saisonkalender (saisondaten3.json) bzw. in ernaehrung.json erkannt werden – dadurch berechnet die App die Saison-Ampel und den CO₂-Wert jedes Rezepts live für den aktuellen Monat. Zutaten ohne Treffer (Gewürze, Öl, Getreide …) gelten als neutrale Vorratszutaten.",
+  "rezepte": [
+    {
+      "id": "kuerbissuppe",
+      "titel": "Cremige Kürbissuppe mit Ingwer",
+      "emoji": "🎃",
+      "beschreibung": "Samtige Herbstsuppe aus Hokkaido – die Schale kann einfach mitgekocht werden.",
+      "zeit": 35,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Kürbis",
+          "menge": 1000,
+          "einheit": "g"
+        },
+        {
+          "name": "Möhren",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Ingwer",
+          "menge": 20,
+          "einheit": "g"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 800,
+          "einheit": "ml"
+        },
+        {
+          "name": "Hafer-Kochsahne",
+          "menge": 200,
+          "einheit": "ml"
+        },
+        {
+          "name": "Kürbiskerne",
+          "menge": 2,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Kürbis entkernen und mit Schale würfeln. Möhren und Zwiebel schälen und klein schneiden, Ingwer fein reiben.",
+        "Zwiebel in etwas Öl glasig dünsten, Kürbis, Möhren und Ingwer kurz mitbraten.",
+        "Mit Brühe ablöschen und zugedeckt ca. 20 Minuten weich köcheln.",
+        "Hafer-Kochsahne dazugeben, fein pürieren und mit Salz, Pfeffer und etwas Muskat abschmecken.",
+        "Mit gerösteten Kürbiskernen servieren."
+      ],
+      "typ": "suppe"
+    },
+    {
+      "id": "ofengemuese-herbst",
+      "titel": "Herbstliches Ofengemüse mit Kichererbsen",
+      "emoji": "🥕",
+      "beschreibung": "Ein Blech, wenig Abwasch: Kürbis, Rote Bete und Möhren mit knusprigen Kichererbsen.",
+      "zeit": 45,
+      "portionen": 3,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Kürbis",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Rote Bete",
+          "menge": 3,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Möhren",
+          "menge": 3,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Rote Zwiebeln",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Kichererbsen (Dose)",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 3,
+          "einheit": "EL"
+        },
+        {
+          "name": "Rosmarin",
+          "menge": 2,
+          "einheit": "Zweige"
+        }
+      ],
+      "schritte": [
+        "Ofen auf 200 °C Umluft vorheizen.",
+        "Gemüse in mundgerechte Stücke schneiden, Kichererbsen abtropfen lassen und trocken tupfen.",
+        "Alles mit Öl, Rosmarin, Salz und Pfeffer mischen und auf einem Blech verteilen.",
+        "Ca. 35 Minuten rösten, nach der Hälfte einmal wenden.",
+        "Nach Belieben mit einem Joghurt- oder Tahin-Dip servieren."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "pilzpfanne-knoedel",
+      "titel": "Pilzrahm mit Semmelknödeln",
+      "emoji": "🍄",
+      "beschreibung": "Klassiker aus der bayerischen Küche – mit Champignons, die das ganze Jahr regional wachsen.",
+      "zeit": 40,
+      "portionen": 4,
+      "tags": [
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Champignons",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Sahne",
+          "menge": 200,
+          "einheit": "ml"
+        },
+        {
+          "name": "Altbackene Brötchen",
+          "menge": 6,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Milch",
+          "menge": 250,
+          "einheit": "ml"
+        },
+        {
+          "name": "Eier",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Petersilie",
+          "menge": 1,
+          "einheit": "Bund"
+        }
+      ],
+      "schritte": [
+        "Brötchen würfeln, warme Milch darübergießen und 10 Minuten ziehen lassen.",
+        "Eier und die Hälfte der gehackten Petersilie untermengen, salzen. Mit nassen Händen 8 Knödel formen.",
+        "Knödel in siedendem Salzwasser ca. 20 Minuten gar ziehen lassen (nicht kochen).",
+        "Pilze in Scheiben schneiden und mit der Zwiebel kräftig anbraten.",
+        "Sahne dazugeben, kurz einköcheln lassen, mit Salz, Pfeffer und restlicher Petersilie abschmecken."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "zwetschgen-crumble",
+      "titel": "Zwetschgen-Crumble mit Haferstreuseln",
+      "emoji": "🫐",
+      "beschreibung": "Saftige Spätsommer-Zwetschgen unter knusprigen Haferflocken-Streuseln.",
+      "zeit": 40,
+      "portionen": 4,
+      "tags": [
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Zwetschgen",
+          "menge": 750,
+          "einheit": "g"
+        },
+        {
+          "name": "Haferflocken",
+          "menge": 100,
+          "einheit": "g"
+        },
+        {
+          "name": "Mehl",
+          "menge": 80,
+          "einheit": "g"
+        },
+        {
+          "name": "Butter",
+          "menge": 80,
+          "einheit": "g"
+        },
+        {
+          "name": "Zucker",
+          "menge": 60,
+          "einheit": "g"
+        },
+        {
+          "name": "Zimt",
+          "menge": 1,
+          "einheit": "TL"
+        }
+      ],
+      "schritte": [
+        "Ofen auf 180 °C Ober-/Unterhitze vorheizen.",
+        "Zwetschgen halbieren, entsteinen und in eine Auflaufform legen, mit Zimt bestreuen.",
+        "Haferflocken, Mehl, Zucker und kalte Butter zu Streuseln verkneten.",
+        "Streusel über den Früchten verteilen und ca. 30 Minuten goldbraun backen."
+      ],
+      "typ": "dessert"
+    },
+    {
+      "id": "lauch-kartoffel-suppe",
+      "titel": "Lauch-Kartoffel-Suppe",
+      "emoji": "🥔",
+      "beschreibung": "Wärmt von innen: einfache Suppe aus Lagerkartoffeln und Wintergemüse.",
+      "zeit": 30,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Lauch",
+          "menge": 2,
+          "einheit": "Stangen"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 600,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 1,
+          "einheit": "l"
+        },
+        {
+          "name": "Majoran",
+          "menge": 1,
+          "einheit": "TL"
+        },
+        {
+          "name": "Senf",
+          "menge": 1,
+          "einheit": "TL"
+        }
+      ],
+      "schritte": [
+        "Lauch in Ringe schneiden und gründlich waschen. Kartoffeln und Zwiebel schälen und würfeln.",
+        "Zwiebel und Lauch in Öl andünsten, Kartoffeln dazugeben.",
+        "Mit Brühe aufgießen und 20 Minuten köcheln.",
+        "Etwa die Hälfte pürieren, sodass die Suppe sämig wird. Mit Majoran, Senf, Salz und Pfeffer abschmecken."
+      ],
+      "typ": "suppe"
+    },
+    {
+      "id": "gruenkohl-pfanne",
+      "titel": "Grünkohl-Kartoffel-Pfanne mit Räuchertofu",
+      "emoji": "🥬",
+      "beschreibung": "Moderne Variante des norddeutschen Winterklassikers – nach dem ersten Frost am besten.",
+      "zeit": 35,
+      "portionen": 3,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Grünkohl",
+          "menge": 400,
+          "einheit": "g"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 600,
+          "einheit": "g"
+        },
+        {
+          "name": "Räuchertofu",
+          "menge": 200,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebeln",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Senf",
+          "menge": 1,
+          "einheit": "EL"
+        },
+        {
+          "name": "Rapsöl",
+          "menge": 2,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Kartoffeln kochen, abkühlen lassen und in Scheiben schneiden.",
+        "Grünkohl von den Stielen zupfen, waschen und grob hacken.",
+        "Tofu würfeln und in Öl knusprig braten, herausnehmen.",
+        "Zwiebeln und Kartoffeln in derselben Pfanne anbraten, Grünkohl dazugeben und 8 Minuten mitgaren.",
+        "Tofu unterheben, mit Senf, Salz, Pfeffer und etwas Muskat abschmecken."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "rote-bete-risotto",
+      "titel": "Rote-Bete-Risotto mit Meerrettich",
+      "emoji": "🍚",
+      "beschreibung": "Leuchtend pinkes Risotto aus regionaler Lager-Rote-Bete.",
+      "zeit": 40,
+      "portionen": 3,
+      "tags": [
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Rote Bete",
+          "menge": 400,
+          "einheit": "g"
+        },
+        {
+          "name": "Risottoreis",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 900,
+          "einheit": "ml"
+        },
+        {
+          "name": "Käse",
+          "menge": 40,
+          "einheit": "g"
+        },
+        {
+          "name": "Meerrettich",
+          "menge": 1,
+          "einheit": "TL"
+        }
+      ],
+      "schritte": [
+        "Rote Bete schälen (Handschuhe!) und fein würfeln, Zwiebel hacken.",
+        "Zwiebel in Öl andünsten, Reis dazugeben und glasig rühren.",
+        "Rote Bete dazugeben und nach und nach heiße Brühe angießen, dabei oft umrühren – ca. 20 Minuten.",
+        "Geriebenen Käse unterrühren, mit Meerrettich, Salz und Pfeffer abschmecken."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "rotkohl-apfel-salat",
+      "titel": "Rotkohl-Apfel-Salat mit Walnüssen",
+      "emoji": "🥗",
+      "beschreibung": "Knackige Rohkost für den Winter – voller Vitamin C.",
+      "zeit": 20,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Rotkohl",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Äpfel",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Walnüsse",
+          "menge": 50,
+          "einheit": "g"
+        },
+        {
+          "name": "Apfelessig",
+          "menge": 3,
+          "einheit": "EL"
+        },
+        {
+          "name": "Rapsöl",
+          "menge": 3,
+          "einheit": "EL"
+        },
+        {
+          "name": "Ahornsirup",
+          "menge": 1,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Rotkohl sehr fein hobeln, mit einer Prise Salz kräftig durchkneten.",
+        "Äpfel in feine Stifte schneiden, Walnüsse grob hacken und anrösten.",
+        "Essig, Öl und Ahornsirup verrühren, alles vermengen und 10 Minuten ziehen lassen."
+      ],
+      "typ": "salat"
+    },
+    {
+      "id": "feldsalat-birne",
+      "titel": "Feldsalat mit Birne und Kürbiskernen",
+      "emoji": "🍐",
+      "beschreibung": "Feldsalat ist einer der wenigen Salate, die im Winter regional wachsen.",
+      "zeit": 15,
+      "portionen": 2,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Feldsalat",
+          "menge": 150,
+          "einheit": "g"
+        },
+        {
+          "name": "Birne",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Kürbiskerne",
+          "menge": 2,
+          "einheit": "EL"
+        },
+        {
+          "name": "Senf",
+          "menge": 1,
+          "einheit": "TL"
+        },
+        {
+          "name": "Apfelessig",
+          "menge": 2,
+          "einheit": "EL"
+        },
+        {
+          "name": "Rapsöl",
+          "menge": 3,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Feldsalat gründlich waschen und trocken schleudern.",
+        "Birne in dünne Spalten schneiden, Kürbiskerne ohne Fett anrösten.",
+        "Aus Senf, Essig, Öl, Salz und Pfeffer ein Dressing rühren und alles kurz vor dem Servieren mischen."
+      ],
+      "typ": "salat"
+    },
+    {
+      "id": "pastinakensuppe",
+      "titel": "Pastinakensuppe mit Apfel",
+      "emoji": "🥣",
+      "beschreibung": "Nussig-süßes Wurzelgemüse, das bis ins Frühjahr aus dem Lager kommt.",
+      "zeit": 30,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Pastinaken",
+          "menge": 600,
+          "einheit": "g"
+        },
+        {
+          "name": "Apfel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 800,
+          "einheit": "ml"
+        },
+        {
+          "name": "Hafer-Kochsahne",
+          "menge": 100,
+          "einheit": "ml"
+        }
+      ],
+      "schritte": [
+        "Pastinaken, Apfel und Zwiebel schälen und würfeln.",
+        "Zwiebel andünsten, Pastinaken und Apfel kurz mitbraten.",
+        "Mit Brühe aufgießen und 20 Minuten köcheln, dann fein pürieren.",
+        "Hafer-Kochsahne einrühren und mit Salz, Pfeffer und etwas Zitronensaft abschmecken."
+      ],
+      "typ": "suppe"
+    },
+    {
+      "id": "wirsing-eintopf",
+      "titel": "Wirsing-Eintopf mit weißen Bohnen",
+      "emoji": "🍲",
+      "beschreibung": "Sättigender Eintopf, der aufgewärmt sogar noch besser schmeckt.",
+      "zeit": 45,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Wirsing",
+          "menge": 1,
+          "einheit": "Kopf"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 400,
+          "einheit": "g"
+        },
+        {
+          "name": "Möhren",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Weiße Bohnen (Dose)",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 1.2,
+          "einheit": "l"
+        }
+      ],
+      "schritte": [
+        "Wirsing in Streifen schneiden, Kartoffeln und Möhren würfeln, Zwiebel hacken.",
+        "Zwiebel andünsten, Kartoffeln und Möhren dazugeben und mit Brühe aufgießen.",
+        "Nach 10 Minuten Wirsing zugeben und weitere 15 Minuten köcheln.",
+        "Bohnen abgießen, dazugeben und erhitzen. Mit Kümmel, Salz und Pfeffer würzen."
+      ],
+      "typ": "suppe"
+    },
+    {
+      "id": "rosenkohl-ofen",
+      "titel": "Rosenkohl aus dem Ofen mit Senf-Dip",
+      "emoji": "🥦",
+      "beschreibung": "Geröstet schmeckt Rosenkohl nussig statt bitter – auch für Skeptiker.",
+      "zeit": 30,
+      "portionen": 2,
+      "tags": [
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Rosenkohl",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 400,
+          "einheit": "g"
+        },
+        {
+          "name": "Joghurt",
+          "menge": 150,
+          "einheit": "g"
+        },
+        {
+          "name": "Senf",
+          "menge": 1,
+          "einheit": "EL"
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Ofen auf 220 °C vorheizen. Rosenkohl putzen und halbieren, Kartoffeln achteln.",
+        "Mit Öl, Salz und Pfeffer mischen und 25 Minuten rösten.",
+        "Joghurt mit Senf, Salz und etwas Honig oder Agavendicksaft verrühren und dazu servieren."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "spargel-klassisch",
+      "titel": "Spargel mit neuen Kartoffeln und Kräuter-Vinaigrette",
+      "emoji": "🌱",
+      "beschreibung": "Leichter als mit Hollandaise – und genauso frühlingshaft.",
+      "zeit": 35,
+      "portionen": 2,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Spargel",
+          "menge": 1000,
+          "einheit": "g"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Radieschen",
+          "menge": 1,
+          "einheit": "Bund"
+        },
+        {
+          "name": "Schnittlauch",
+          "menge": 1,
+          "einheit": "Bund"
+        },
+        {
+          "name": "Weißweinessig",
+          "menge": 3,
+          "einheit": "EL"
+        },
+        {
+          "name": "Rapsöl",
+          "menge": 4,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Kartoffeln in der Schale gar kochen.",
+        "Spargel schälen, holzige Enden abschneiden. In Salzwasser mit einer Prise Zucker 10–12 Minuten garen.",
+        "Radieschen fein würfeln, Schnittlauch in Röllchen schneiden.",
+        "Mit Essig, Öl, Salz und Pfeffer zu einer Vinaigrette rühren und über Spargel und Kartoffeln geben."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "rhabarber-crumble",
+      "titel": "Rhabarber-Erdbeer-Crumble",
+      "emoji": "🍓",
+      "beschreibung": "Säuerlich trifft süß: der Dessertklassiker im Mai und Juni.",
+      "zeit": 40,
+      "portionen": 4,
+      "tags": [
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Rhabarber",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Erdbeeren",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Haferflocken",
+          "menge": 100,
+          "einheit": "g"
+        },
+        {
+          "name": "Mehl",
+          "menge": 80,
+          "einheit": "g"
+        },
+        {
+          "name": "Butter",
+          "menge": 80,
+          "einheit": "g"
+        },
+        {
+          "name": "Zucker",
+          "menge": 80,
+          "einheit": "g"
+        }
+      ],
+      "schritte": [
+        "Ofen auf 180 °C vorheizen. Rhabarber putzen und in Stücke schneiden, Erdbeeren halbieren.",
+        "Früchte mit der Hälfte des Zuckers in eine Form geben.",
+        "Haferflocken, Mehl, restlichen Zucker und Butter zu Streuseln verkneten und darüber verteilen.",
+        "Ca. 30 Minuten backen, bis die Streusel goldbraun sind."
+      ],
+      "typ": "dessert"
+    },
+    {
+      "id": "radieschen-quark",
+      "titel": "Radieschen-Kräuter-Quark auf Vollkornbrot",
+      "emoji": "🥖",
+      "beschreibung": "Fünf-Minuten-Abendbrot mit knackigen Frühlings-Radieschen.",
+      "zeit": 10,
+      "portionen": 2,
+      "tags": [
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Radieschen",
+          "menge": 1,
+          "einheit": "Bund"
+        },
+        {
+          "name": "Quark",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Frühlingszwiebeln",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Schnittlauch",
+          "menge": 1,
+          "einheit": "Bund"
+        },
+        {
+          "name": "Vollkornbrot",
+          "menge": 4,
+          "einheit": "Scheiben"
+        }
+      ],
+      "schritte": [
+        "Radieschen in feine Scheiben, Frühlingszwiebeln und Schnittlauch in Röllchen schneiden.",
+        "Quark mit einem Schuss Wasser glatt rühren, Kräuter unterheben und mit Salz und Pfeffer würzen.",
+        "Auf Brot streichen und mit Radieschen belegen."
+      ],
+      "typ": "fruehstueck"
+    },
+    {
+      "id": "spinat-dal",
+      "titel": "Spinat-Linsen-Dal",
+      "emoji": "🍛",
+      "beschreibung": "Würziges Linsencurry mit frischem Frühlingsspinat – proteinreich und günstig.",
+      "zeit": 30,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Rote Linsen",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Spinat",
+          "menge": 300,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Knoblauch",
+          "menge": 2,
+          "einheit": "Zehen"
+        },
+        {
+          "name": "Ingwer",
+          "menge": 20,
+          "einheit": "g"
+        },
+        {
+          "name": "Currypulver",
+          "menge": 2,
+          "einheit": "TL"
+        },
+        {
+          "name": "Kokosmilch",
+          "menge": 400,
+          "einheit": "ml"
+        }
+      ],
+      "schritte": [
+        "Zwiebel, Knoblauch und Ingwer fein hacken und in Öl anschwitzen, Curry kurz mitrösten.",
+        "Linsen, Kokosmilch und 400 ml Wasser dazugeben und 15 Minuten köcheln.",
+        "Spinat unterheben und zusammenfallen lassen.",
+        "Mit Salz und Zitronensaft abschmecken, dazu passt Reis oder Fladenbrot."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "kohlrabi-schnitzel",
+      "titel": "Kohlrabi-Schnitzel mit Kartoffelsalat",
+      "emoji": "🥙",
+      "beschreibung": "Paniert und goldbraun gebraten – Kohlrabi wird zum Lieblingsgericht der ganzen Familie.",
+      "zeit": 40,
+      "portionen": 3,
+      "tags": [
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Kohlrabi",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Eier",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Semmelbrösel",
+          "menge": 100,
+          "einheit": "g"
+        },
+        {
+          "name": "Mehl",
+          "menge": 50,
+          "einheit": "g"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 600,
+          "einheit": "g"
+        },
+        {
+          "name": "Gurke",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Apfelessig",
+          "menge": 3,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Kartoffeln kochen, pellen, in Scheiben schneiden und mit Gurkenscheiben, Essig, Öl, Salz und etwas Brühe mischen.",
+        "Kohlrabi schälen, in 1 cm dicke Scheiben schneiden und 5 Minuten in Salzwasser vorgaren.",
+        "Scheiben nacheinander in Mehl, verquirltem Ei und Semmelbröseln wenden.",
+        "In reichlich Öl von beiden Seiten goldbraun braten."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "ofentomaten-linsen",
+      "titel": "Ofentomaten mit Linsen",
+      "emoji": "🍅",
+      "beschreibung": "Im Hochsommer geschmortes Tomaten-Glück mit Thymian und roten Linsen.",
+      "zeit": 35,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Rispentomaten",
+          "menge": 800,
+          "einheit": "g"
+        },
+        {
+          "name": "Rote Linsen",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Knoblauch",
+          "menge": 2,
+          "einheit": "Zehen"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 500,
+          "einheit": "ml"
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 3,
+          "einheit": "EL"
+        },
+        {
+          "name": "Thymian",
+          "menge": 1,
+          "einheit": "Bund"
+        }
+      ],
+      "schritte": [
+        "Ofen auf 200 °C vorheizen. Tomaten halbieren, mit Öl, Thymian und Salz auf ein Blech legen und 25 Minuten schmoren.",
+        "Zwiebel und Knoblauch hacken und andünsten, Linsen und Brühe dazugeben, 12 Minuten köcheln.",
+        "Linsen mit Salz, Pfeffer und einem Spritzer Essig abschmecken und mit den Ofentomaten servieren."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "zucchini-puffer",
+      "titel": "Zucchini-Puffer mit Joghurt-Dip",
+      "emoji": "🥒",
+      "beschreibung": "Die perfekte Lösung, wenn der Garten mal wieder zu viele Zucchini liefert.",
+      "zeit": 30,
+      "portionen": 3,
+      "tags": [
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Zucchini",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 300,
+          "einheit": "g"
+        },
+        {
+          "name": "Eier",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Mehl",
+          "menge": 4,
+          "einheit": "EL"
+        },
+        {
+          "name": "Joghurt",
+          "menge": 200,
+          "einheit": "g"
+        },
+        {
+          "name": "Knoblauch",
+          "menge": 1,
+          "einheit": "Zehe"
+        },
+        {
+          "name": "Dill",
+          "menge": 1,
+          "einheit": "Bund"
+        }
+      ],
+      "schritte": [
+        "Zucchini und Kartoffeln grob raspeln, salzen und nach 10 Minuten kräftig ausdrücken.",
+        "Mit Eiern und Mehl verrühren, pfeffern.",
+        "Kleine Puffer in Öl von beiden Seiten knusprig braten.",
+        "Joghurt mit Knoblauch und Dill verrühren und dazu servieren."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "gurkensalat-dill",
+      "titel": "Gurkensalat mit Dill",
+      "emoji": "🥒",
+      "beschreibung": "Erfrischende Beilage für heiße Tage – fertig in zehn Minuten.",
+      "zeit": 10,
+      "portionen": 2,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Gurke",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Rote Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Dill",
+          "menge": 1,
+          "einheit": "Bund"
+        },
+        {
+          "name": "Weißweinessig",
+          "menge": 2,
+          "einheit": "EL"
+        },
+        {
+          "name": "Rapsöl",
+          "menge": 2,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Gurke in dünne Scheiben hobeln, Zwiebel in feine Ringe schneiden.",
+        "Dill hacken und mit Essig, Öl, Salz, Pfeffer und einer Prise Zucker verrühren.",
+        "Alles mischen und kurz durchziehen lassen."
+      ],
+      "typ": "salat"
+    },
+    {
+      "id": "sommer-ratatouille",
+      "titel": "Sommer-Ratatouille",
+      "emoji": "🫑",
+      "beschreibung": "Mediterranes Schmorgemüse – am besten im August, wenn alles gleichzeitig reif ist.",
+      "zeit": 50,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Zucchini",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Aubergine",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Paprika",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Tomaten",
+          "menge": 600,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebeln",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Knoblauch",
+          "menge": 3,
+          "einheit": "Zehen"
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 4,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Alle Gemüse in etwa gleich große Würfel schneiden.",
+        "Zwiebeln und Knoblauch in Olivenöl andünsten, Aubergine dazugeben und 5 Minuten braten.",
+        "Paprika und Zucchini zufügen, nach weiteren 5 Minuten die Tomaten.",
+        "Zugedeckt 25 Minuten schmoren, mit Kräutern der Provence, Salz und Pfeffer würzen."
+      ],
+      "typ": "hauptgericht"
+    },
+    {
+      "id": "bohnensalat",
+      "titel": "Bunter Bohnensalat mit Tomaten",
+      "emoji": "🫘",
+      "beschreibung": "Grüne Bohnen frisch vom Feld – als sättigender Salat oder Grillbeilage.",
+      "zeit": 25,
+      "portionen": 3,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Grüne Bohnen",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Cherrytomaten",
+          "menge": 250,
+          "einheit": "g"
+        },
+        {
+          "name": "Rote Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Bohnenkraut",
+          "menge": 1,
+          "einheit": "Zweig"
+        },
+        {
+          "name": "Weißweinessig",
+          "menge": 3,
+          "einheit": "EL"
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 3,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Bohnen putzen und mit dem Bohnenkraut in Salzwasser 8–10 Minuten bissfest garen, kalt abschrecken.",
+        "Tomaten halbieren, Zwiebel fein würfeln.",
+        "Essig, Öl, Salz und Pfeffer verrühren, alles mischen und 10 Minuten ziehen lassen."
+      ],
+      "typ": "salat"
+    },
+    {
+      "id": "beeren-porridge",
+      "titel": "Overnight Oats mit Sommerbeeren",
+      "emoji": "🥣",
+      "beschreibung": "Abends vorbereitet, morgens fertig – mit Heidelbeeren und Himbeeren der Saison.",
+      "zeit": 5,
+      "portionen": 1,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Haferflocken",
+          "menge": 60,
+          "einheit": "g"
+        },
+        {
+          "name": "Hafermilch",
+          "menge": 180,
+          "einheit": "ml"
+        },
+        {
+          "name": "Heidelbeeren",
+          "menge": 80,
+          "einheit": "g"
+        },
+        {
+          "name": "Himbeeren",
+          "menge": 50,
+          "einheit": "g"
+        },
+        {
+          "name": "Leinsamen",
+          "menge": 1,
+          "einheit": "EL"
+        }
+      ],
+      "schritte": [
+        "Haferflocken, Leinsamen und Hafermilch in einem Glas verrühren.",
+        "Über Nacht im Kühlschrank quellen lassen.",
+        "Morgens mit den Beeren toppen."
+      ],
+      "typ": "fruehstueck"
+    },
+    {
+      "id": "apfel-porridge",
+      "titel": "Warmes Apfel-Zimt-Porridge",
+      "emoji": "🍎",
+      "beschreibung": "Das Frühstück für kalte Tage – mit Äpfeln aus dem regionalen Lager.",
+      "zeit": 10,
+      "portionen": 1,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Haferflocken",
+          "menge": 60,
+          "einheit": "g"
+        },
+        {
+          "name": "Hafermilch",
+          "menge": 250,
+          "einheit": "ml"
+        },
+        {
+          "name": "Apfel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Zimt",
+          "menge": 0.5,
+          "einheit": "TL"
+        },
+        {
+          "name": "Walnüsse",
+          "menge": 15,
+          "einheit": "g"
+        }
+      ],
+      "schritte": [
+        "Haferflocken mit Hafermilch aufkochen und 3–4 Minuten unter Rühren quellen lassen.",
+        "Apfel reiben oder würfeln und mit Zimt unterrühren.",
+        "Mit gehackten Walnüssen servieren."
+      ],
+      "typ": "fruehstueck"
+    },
+    {
+      "id": "moehren-ingwer-suppe",
+      "titel": "Möhren-Ingwer-Suppe mit Orange",
+      "emoji": "🥕",
+      "beschreibung": "Fruchtig-scharfe Suppe – Möhren gibt es fast das ganze Jahr aus der Region.",
+      "zeit": 30,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Möhren",
+          "menge": 800,
+          "einheit": "g"
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Ingwer",
+          "menge": 30,
+          "einheit": "g"
+        },
+        {
+          "name": "Orange",
+          "menge": 1,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 900,
+          "einheit": "ml"
+        },
+        {
+          "name": "Kokosmilch",
+          "menge": 200,
+          "einheit": "ml"
+        }
+      ],
+      "schritte": [
+        "Möhren, Zwiebel und Ingwer schälen und klein schneiden.",
+        "In Öl andünsten, mit Brühe aufgießen und 20 Minuten köcheln.",
+        "Orangensaft und Kokosmilch zufügen, fein pürieren und abschmecken."
+      ],
+      "typ": "suppe"
+    },
+    {
+      "id": "steckruebeneintopf",
+      "titel": "Steckrübeneintopf",
+      "emoji": "🍲",
+      "beschreibung": "Die unterschätzte Rübe: mild-süßlich und perfekt für deftige Wintereintöpfe.",
+      "zeit": 45,
+      "portionen": 4,
+      "tags": [
+        "vegan",
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Steckrübe",
+          "menge": 800,
+          "einheit": "g"
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 400,
+          "einheit": "g"
+        },
+        {
+          "name": "Möhren",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Lauch",
+          "menge": 1,
+          "einheit": "Stange"
+        },
+        {
+          "name": "Gemüsebrühe",
+          "menge": 1.2,
+          "einheit": "l"
+        },
+        {
+          "name": "Petersilie",
+          "menge": 1,
+          "einheit": "Bund"
+        }
+      ],
+      "schritte": [
+        "Steckrübe, Kartoffeln und Möhren schälen und würfeln, Lauch in Ringe schneiden.",
+        "Alles kurz in Öl anschwitzen und mit Brühe aufgießen.",
+        "30 Minuten köcheln, mit Salz, Pfeffer und Muskat abschmecken und mit Petersilie bestreuen."
+      ],
+      "typ": "suppe"
+    },
+    {
+      "id": "kirsch-clafoutis",
+      "titel": "Kirsch-Clafoutis",
+      "emoji": "🍒",
+      "beschreibung": "Französischer Ofenpfannkuchen mit frischen Süßkirschen aus dem Juni und Juli.",
+      "zeit": 45,
+      "portionen": 4,
+      "tags": [
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Kirschen",
+          "menge": 500,
+          "einheit": "g"
+        },
+        {
+          "name": "Eier",
+          "menge": 3,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Milch",
+          "menge": 250,
+          "einheit": "ml"
+        },
+        {
+          "name": "Mehl",
+          "menge": 80,
+          "einheit": "g"
+        },
+        {
+          "name": "Zucker",
+          "menge": 60,
+          "einheit": "g"
+        }
+      ],
+      "schritte": [
+        "Ofen auf 180 °C vorheizen, eine Form einfetten.",
+        "Kirschen entsteinen und in der Form verteilen.",
+        "Eier, Zucker, Mehl und Milch zu einem glatten Teig verrühren und über die Kirschen gießen.",
+        "Ca. 35 Minuten backen, lauwarm mit Puderzucker servieren."
+      ],
+      "typ": "dessert"
+    },
+    {
+      "id": "fenchel-orangen-salat",
+      "titel": "Fenchel-Orangen-Salat",
+      "emoji": "🍊",
+      "beschreibung": "Frisch und knackig – Zitrusfrüchte haben im Winter in Südeuropa Erntezeit.",
+      "zeit": 15,
+      "portionen": 2,
+      "tags": [
+        "vegan",
+        "vegetarisch",
+        "schnell"
+      ],
+      "zutaten": [
+        {
+          "name": "Fenchel",
+          "menge": 2,
+          "einheit": "Knollen"
+        },
+        {
+          "name": "Orangen",
+          "menge": 2,
+          "einheit": "Stück"
+        },
+        {
+          "name": "Walnüsse",
+          "menge": 30,
+          "einheit": "g"
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "EL"
+        },
+        {
+          "name": "Zitrone",
+          "menge": 0.5,
+          "einheit": "Stück"
+        }
+      ],
+      "schritte": [
+        "Fenchel halbieren und in hauchdünne Scheiben hobeln, das Grün aufheben.",
+        "Orangen filetieren und den Saft dabei auffangen.",
+        "Saft mit Zitronensaft, Öl, Salz und Pfeffer verrühren, alles mischen und mit Walnüssen und Fenchelgrün bestreuen."
+      ],
+      "typ": "salat"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "_hinweis": "Referenz-Warenkorb: Pro-Kopf-Jahresmenge 'Ø Deutschland' in kg, recherchiert aus BZL/BLE-Versorgungsbilanzen (bmel-statistik.de), Statista und destatis (Wirtschaftsjahr 2023-2025, je nach Verfuegbarkeit der aktuellsten Quelle pro Produkt). Dient als Vergleichsbasis fuer den Food-Profil-Fussabdruck: dieselbe Menge wird mit denselben Faktoren aus saisondaten3.json (kategorie_umwelt + umwelt_faktoren) bzw. ernaehrung.json (umwelt-Objekt) verrechnet wie der tatsaechliche Einkauf des Nutzers, damit der Vergleich methodisch sauber bleibt. Werte ohne eigene Einzelquelle ('geschaetzt': true) sind Teilschaetzungen aus BZL-Gesamtsummen (107 kg/Jahr Gesamtgemuese, 69 kg/Jahr Gesamtobst ohne Zitrus, 12,8 kg/Jahr Gesamtfisch), aufgeteilt anhand bekannter Anteile einzelner Topprodukte (Tomate, Apfel, Banane, Zwiebel, Karotte, Traube, Erdbeere) - als Richtwert, nicht als amtliche Einzelstatistik zu verstehen. gemuese_obst_kategorien-Schluessel entsprechen exakt den Kategorienamen in saisondaten3.json (kategorie_umwelt), tierische_produkte-Schluessel den Produkt-IDs in ernaehrung.json.",
+  "gemuese_obst_kategorien": {
+    "Beeren":              {"kg_pro_kopf_jahr": 4.0,  "geschaetzt": true},
+    "Exotische_Fruechte":  {"kg_pro_kopf_jahr": 18.0, "geschaetzt": true},
+    "Fruchtgemuese":       {"kg_pro_kopf_jahr": 35.0, "geschaetzt": true},
+    "Huelsenfruechte":     {"kg_pro_kopf_jahr": 2.0,  "geschaetzt": true},
+    "Kernobst":            {"kg_pro_kopf_jahr": 23.0, "geschaetzt": true},
+    "Kohlgemuese":         {"kg_pro_kopf_jahr": 13.0, "geschaetzt": true},
+    "Salate":              {"kg_pro_kopf_jahr": 8.0,  "geschaetzt": true},
+    "Sonstiges_Gemuese":   {"kg_pro_kopf_jahr": 20.0, "geschaetzt": true},
+    "Sonstiges_Obst":      {"kg_pro_kopf_jahr": 9.0,  "geschaetzt": true},
+    "Steinobst":           {"kg_pro_kopf_jahr": 7.0,  "geschaetzt": true},
+    "Wurzelgemuese":       {"kg_pro_kopf_jahr": 13.0, "geschaetzt": true},
+    "Zitrusfruechte":      {"kg_pro_kopf_jahr": 26.5, "quelle": "BZL/BMEL-Statistik, WJ 2024/25"}
+  },
+  "tierische_produkte": {
+    "butter":    {"kg_pro_kopf_jahr": 5.6,  "quelle": "BLE/Statista 2025"},
+    "milch":     {"kg_pro_kopf_jahr": 46.2, "quelle": "BLE/BMEL-Statistik 2024 (Konsummilch)"},
+    "sahne":     {"kg_pro_kopf_jahr": 5.0,  "quelle": "Statista 2023"},
+    "joghurt":   {"kg_pro_kopf_jahr": 14.5, "quelle": "Statista 2024"},
+    "kaese":     {"kg_pro_kopf_jahr": 26.4, "quelle": "BLE/Statista 2025"},
+    "quark":     {"kg_pro_kopf_jahr": 5.5,  "geschaetzt": true},
+    "ei":        {"kg_pro_kopf_jahr": 15.0, "quelle": "BLE 2024 (249 Eier/Jahr x ~60g)"},
+    "haehnchen": {"kg_pro_kopf_jahr": 13.1, "quelle": "BLE/Statista 2023"},
+    "rind":      {"kg_pro_kopf_jahr": 8.9,  "quelle": "BLE/Statista 2023"},
+    "schwein":   {"kg_pro_kopf_jahr": 27.5, "quelle": "BLE/Statista 2023"},
+    "lamm":      {"kg_pro_kopf_jahr": 0.6,  "quelle": "BLE/Statista 2023"},
+    "lachs":     {"kg_pro_kopf_jahr": 2.9,  "geschaetzt": true},
+    "thunfisch": {"kg_pro_kopf_jahr": 1.9,  "geschaetzt": true},
+    "garnelen":  {"kg_pro_kopf_jahr": 1.3,  "geschaetzt": true}
+  }
+}
