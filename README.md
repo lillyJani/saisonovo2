@@ -8,7 +8,7 @@ Mobile Web-App für nachhaltiges Einkaufen und Kochen — mit Saisonkalender, Ba
 
 Die App läuft direkt im Browser, kein Download nötig:
 
-👉 **[lillyjani.github.io/saisonovo](https://lillyjani.github.io/saisonovo/)**
+👉 **[lillyjani.github.io/saisonovo](https://lillyjani.github.io/saisonovo2/)**
 
 ### Als App zum Homescreen hinzufügen
 
