@@ -8,7 +8,7 @@ Mobile Web-App für nachhaltiges Einkaufen und Kochen — mit Saisonkalender, Ba
 
 Die App läuft direkt im Browser, kein Download nötig:
 
-👉 **[lillyjani.github.io/saisonovo](https://lillyjani.github.io/saisonovo2/)**
+👉 **[lillyjani.github.io/saisonovo](https://lillyjani.github.io/saisonovo/)**
 
 ### Als App zum Homescreen hinzufügen
 
@@ -178,6 +178,30 @@ http://127.0.0.1:4173/
 - Ohne PHP-Backend (GitHub Pages, Live Server) fragt die App Open Food Facts und Open Prices direkt aus dem Browser ab, dann ohne Cache
 - Lokal starten: `php -S localhost:8000` im Projektordner, dann http://localhost:8000 öffnen
 
+### Scanner-Korrekturen *(26.11.)*
+- Die Kamera-Erkennung wird beim Stoppen jetzt wirklich beendet (`reader.reset()`). Vorher lief sie weiter, und alte Erkennungen öffneten später von selbst das zuletzt gescannte Produkt
+- Ein gerade geschlossenes Produkt wird erst wieder erkannt, wenn es kurz (≥ 1,2 s) aus dem Bild war
+- „Zur Einkaufsliste hinzufügen“ bleibt im Scanner (Bestätigung + „×2“ bei erneutem Tippen) und speichert die gescannten Daten am Artikel (`item.scan`)
+- Die Detailseite eines gescannten Artikels zeigt Öko-Score, Nutri-Score, NOVA, Herkunft, Kategorie, Siegel, Verpackung und Preis. Bei älteren Artikeln werden die Daten über den Scan-Verlauf nachgeladen
+- Kategorie-Symbole vergleichen ganze Wörter: Pfefferminze bekommt kein Paprika-Symbol mehr, dazu neue Symbole für Tee, Kaffee, Kräuter, Nüsse und Honig
+
+### REWE-Preise über Pepesto & Apify *(26.11.)*
+- Die Scan-Karte und die Detailseite in der Einkaufsliste zeigen „Im Supermarkt“: tagesaktueller REWE-Online-Preis (Pepesto) und REWE-Preis in deiner Nähe (Apify, per Postleitzahl), jeweils mit Angebot, Grundpreis und zugeordnetem Artikelnamen
+- Die Postleitzahl stellst du unter Profil → Einstellungen → Einkaufen ein
+- Die Quellen sind aktiv, sobald im Backend (`api/config.local.php`) ein Pepesto-Schlüssel bzw. Apify-Token eingetragen ist. Beide brauchen das PHP-Backend, Schlüssel gehören nie in den Browser
+- Keine EAN bei beiden Anbietern, deshalb Zuordnung über Marke, Name und Packungsgröße. Unsichere Treffer werden nicht angezeigt (Details in `api/README.md`)
+
+### Einkaufsliste nach Bereichen *(26.11.)*
+- Offene Artikel werden in der Reihenfolge eines typischen Supermarkt-Rundgangs gruppiert: Obst & Gemüse, Brot & Backwaren, Kühlregal, Fleisch/Wurst/Fisch, Nudeln/Reis/Konserven, Frühstück & Süßes, Gewürze/Öle/Backzutaten, Getränke/Tee/Kaffee, Tiefkühl, Drogerie & Haushalt, Sonstiges. Innerhalb eines Bereichs alphabetisch, erledigte Artikel unten
+- Zuordnung (`listKategorie()` in `features.js`): gescannte Open-Food-Facts-Kategorien, dann Stichwörter für verarbeitete Produkte (z. B. Tomatenmark → Konserven, Paprikapulver → Gewürze), dann Saisonkalender, dann Lebensmitteldaten. Artikel ohne eigenes Symbol zeigen das Symbol ihres Bereichs
+- Abhaken (Kreis links) = **eingekauft**. Jeder abgehakte Artikel wird sofort gewertet (`listRecordPurchase` in features.js):
+  - Das erste Lebensmittel eines Tages zählt als Einkauf und bringt +5 Punkte.
+  - Saisonale Artikel bringen je +1 Punkt, höchstens 10 pro Tag.
+  - Die CO₂- und Wasser-Bilanz sowie die Challenges werden mitgezählt. Ein Tag ohne Fleisch oder Fisch zählt nach Tagesende für die Veggie-Woche.
+  - Wird der Haken am selben Tag zurückgenommen, verschwindet der Artikel wieder aus der Bilanz. Punkte gibt es pro Artikel nur einmal.
+- **Aktualisieren entfernt eingekaufte Artikel** (`listClearBought` in features.js): beim Neuladen der App und durch Herunterziehen der Einkaufsliste (eigene Geste, funktioniert auch in der installierten App). Sie sind beim Abhaken schon gewertet und bleiben in der Einkaufs-Historie.
+- Beim Antippen des leeren Eingabefelds erscheinen Vorschläge: „Oft gekauft“ (aus der Einkaufs-Historie) und „Jetzt in Saison“. Beim Tippen erscheint wie bisher die Autovervollständigung.
+
 ### Saisonkalender
 - Oben links der **Scanner** (öffnet dasselbe Fenster wie in der Einkaufsliste: Kamera oder Code eingeben), rechts daneben die Suche. Der Zurück-Knopf im Scanner führt wieder zum Saisonkalender
 - Monatsübersicht aller regionalen Obst- und Gemüsesorten
@@ -257,3 +281,18 @@ npm start
 | GET | `/api/scan/:barcode` | Barcode-Lookup |
 | GET | `/api/stats` | Statistiken |
 | GET | `/api/recipe` | Rezept per URL importieren (JSON-LD-Extraktion) |
+
+## Rezepte aus dem Open Recipe Corpus (CC BY-SA 4.0)
+
+Zusätzlich zu `rezepte.json` lädt das Kochbuch die Datei `rezepte-orc.json`, sofern sie vorhanden ist.
+Sie wird mit `tools/rezepte-import/import.mjs` erzeugt. Das Skript
+
+1. ruft die Rezepte über die API des [Open Recipe Corpus](https://github.com/Rippy1911/open-recipe-corpus) ab,
+2. übersetzt sie mit DeepL oder OpenAI ins Deutsche,
+3. prüft Zutaten, Mengen, Temperaturen und Zeiten und
+4. speichert sie als JSON.
+
+Die Rezepte erscheinen im Kochbuch, im Rezept des Tages und in der Kategorie „Open Recipe Corpus“.
+Jedes Rezept zeigt den Kasten „Quelle & Lizenz“ mit Originalquelle, Urhebern bzw.
+Versionsgeschichte, Lizenzlink, Änderungen und dem Hinweis, dass die deutsche Fassung ebenfalls
+unter CC BY-SA 4.0 steht. Anleitung: [`tools/rezepte-import/README.md`](tools/rezepte-import/README.md).

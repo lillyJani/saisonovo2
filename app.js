@@ -464,6 +464,13 @@ function _buildAutocompleteItems(query) {
 function showAutocomplete(query) {
   const dropdown = document.getElementById('autocomplete-list');
   if (!dropdown) return;
+  // Leeres Feld: Vorschläge (oft gekauft + gerade in Saison), siehe listSuggestions() in features.js
+  if (!query.trim() && typeof listSuggestionsHtml === 'function') {
+    const html = listSuggestionsHtml();
+    dropdown.innerHTML = html;
+    dropdown.classList.toggle('open', !!html);
+    return;
+  }
   const items = _buildAutocompleteItems(query);
   if (!items.length || !query.trim()) {
     dropdown.innerHTML = '';
@@ -514,24 +521,21 @@ function renderList() {
   if (!container || !empty || !sub) return;
 
   const countBadge = document.getElementById('list-count');
-  const doneBtn = document.getElementById('shopping-done-btn');
 
   if (listItems.length === 0) {
     container.style.display = 'none';
     empty.style.display = 'block';
     sub.textContent = 'Deine Liste ist leer';
     if (countBadge) countBadge.textContent = '';
-    if (doneBtn) doneBtn.style.display = 'none';
     return;
   }
-  if (doneBtn) doneBtn.style.display = 'flex';
 
   const undone = listItems.filter(i => !i.done).reverse();
   const done   = listItems.filter(i =>  i.done).reverse();
 
   empty.style.display = 'none';
   container.style.display = 'block';
-  sub.textContent = done.length ? `${undone.length} offen · ${done.length} erledigt` : `${listItems.length} Artikel`;
+  sub.textContent = done.length ? `${undone.length} offen · ${done.length} eingekauft` : `${listItems.length} Artikel`;
   if (countBadge) countBadge.textContent = listItems.length;
 
   const renderItem = item => {
@@ -541,7 +545,7 @@ function renderList() {
     const ernProdukt = !produkt ? _matchErnaehrung(item.text) : null;
     const emoji = produkt
       ? (_getProduktEmoji(produkt))
-      : (ernProdukt?.emoji || '🛒');
+      : (ernProdukt?.emoji || item.scan?.emoji || (typeof listKategorieIcon === 'function' ? listKategorieIcon(item) : '🛒'));
 
     let badge = '';
     const a = item.ampel;
@@ -562,7 +566,7 @@ function renderList() {
 
     return `
     <div class="list-item${item.done ? ' list-item-done' : ''}" onclick="showListItemDetails(${item.id})" style="cursor:pointer">
-      <button class="list-checkbox${item.done ? ' completed' : ''}" onclick="event.stopPropagation(); toggleDone(${item.id})" aria-label="${item.done ? 'Als offen markieren' : 'Als erledigt markieren'}"></button>
+      <button class="list-checkbox${item.done ? ' completed' : ''}" onclick="event.stopPropagation(); toggleDone(${item.id})" aria-label="${item.done ? 'Doch nicht eingekauft' : 'Als eingekauft abhaken'}"></button>
       <span class="list-item-emoji">${emoji}</span>
       <span class="list-item-text${item.done ? ' done' : ''}">${swapBadge}${escapeHtml(item.text)}${item.fromRecipe ? '<svg class=\"recipe-from-icon\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25\" /></svg>' : ''}</span>
       ${item.done ? '' : badge}
@@ -573,10 +577,17 @@ function renderList() {
   };
 
   const divider = done.length && undone.length
-    ? `<div class="list-done-divider"><span>Erledigt (${done.length})</span></div>`
+    ? `<div class="list-done-divider"><span>Eingekauft (${done.length})</span></div>`
     : '';
 
-  container.innerHTML = undone.map(renderItem).join('') + divider + done.map(renderItem).join('');
+  // Offene Artikel nach Supermarkt-Bereichen gruppieren (features.js: listGroupItems),
+  // damit man beim Einkaufen Bereich für Bereich abarbeiten kann.
+  const offenHtml = typeof listGroupItems === 'function'
+    ? listGroupItems(undone).map(g => `
+        <div class="list-cat-head"><span class="list-cat-icon">${g.icon}</span><span class="list-cat-name">${g.name}</span><span class="list-cat-count">${g.items.length}</span></div>
+        ${g.items.map(renderItem).join('')}`).join('')
+    : undone.map(renderItem).join('');
+  container.innerHTML = offenHtml + divider + done.map(renderItem).join('');
 }
 
 function showListItemDetails(itemId) {
@@ -592,7 +603,7 @@ function showListItemDetails(itemId) {
   const ernProdukt = !produkt ? _matchErnaehrung(item.text) : null;
   const emoji = produkt
     ? (_getProduktEmoji(produkt))
-    : (ernProdukt?.emoji || '🛒');
+    : (ernProdukt?.emoji || item.scan?.emoji || '🛒');
 
   if (!produkt) {
     const fuzzy = _fuzzyMatch(item.text);
@@ -625,10 +636,11 @@ function showListItemDetails(itemId) {
           <div style="font-size:56px">${emoji}</div>
           <div>
             <h1 style="margin-bottom:4px">${escapeHtml(item.text)}</h1>
-            <div style="font-size:13px;color:var(--muted)">${ernProdukt ? ernProdukt.name : 'Kein Saisonbezug'}</div>
+            <div style="font-size:13px;color:var(--muted)">${ernProdukt ? ernProdukt.name : (typeof scanItemSubtitle === 'function' && scanItemSubtitle(item)) || 'Kein Saisonbezug'}</div>
           </div>
         </div>
         ${ernProdukt ? _amountInputHtml(item) : ''}
+        ${typeof scanItemInfoHtml === 'function' ? scanItemInfoHtml(item) : ''}
         ${swapCard}
         ${ernCard}
         ${fuzzyHtml}
@@ -685,6 +697,7 @@ function showListItemDetails(itemId) {
       </div>
       ${totalAmountHtml}
       ${_amountInputHtml(item)}
+      ${typeof scanItemInfoHtml === 'function' ? scanItemInfoHtml(item) : ''}
 
       ${inCard}
       ${outCard}
@@ -707,6 +720,12 @@ function toggleDone(id) {
 
   const becomingDone = !item.done;
   item.done = becomingDone;
+
+  // Abhaken = eingekauft: wird sofort gewertet (Punkte, Öko-Bilanz, Challenges), siehe features.js
+  if (typeof listRecordPurchase === 'function') {
+    if (becomingDone) listRecordPurchase(item);
+    else listUndoPurchase(item);
+  }
 
   // Punkt vergeben wenn positive Alternative abgehakt wird (nur einmal)
   if (becomingDone && item.ecoSwap && !item.ecoSwapScored) {
@@ -2040,6 +2059,7 @@ function _calculateSaisonScore(saisonProdukt, originCountries) {
 }
 
 let _scanControls = null;
+let _scanReader = null;   // ZXing-Reader; nur reader.reset() beendet die Dauer-Erkennung wirklich
 let _scanActive   = false;
 let _scanRequestId = 0;
 let _scanResumeAt  = 0;
@@ -2131,7 +2151,19 @@ document.addEventListener('click', (e) => {
   dismissScanResult();
 });
 
+// Schutz gegen Mehrfach-Erkennung:
+// _scanGen  – jede Kamera-Sitzung hat eine Nummer; Treffer älterer Sitzungen werden verworfen
+//             (z. B. wenn startScanner kurz hintereinander zweimal aufgerufen wurde).
+// _scanBlock – der zuletzt gescannte Code wird erst wieder angenommen, wenn die Kamera ihn
+//             mindestens 1,2 s am Stück NICHT mehr gesehen hat. So öffnet sich das gerade
+//             geschlossene Produkt nicht von selbst erneut, nur weil es noch vor der Kamera liegt;
+//             wer es bewusst noch einmal scannen will, nimmt es kurz aus dem Bild.
+let _scanGen = 0;
+let _scanStarting = false;
+const _scanBlock = { code: null, goneSince: null };
+
 async function startScanner() {
+  if (_scanStarting) return;
   if (typeof ZXing === 'undefined') {
     setScanStatus('Scanner konnte nicht geladen werden.');
     return;
@@ -2157,15 +2189,38 @@ async function startScanner() {
   }
   setScanStatus('Kamera-Berechtigung wird angefragt…');
 
+  // Eine evtl. noch laufende Kamera-Sitzung sauber beenden, bevor eine neue startet
+  if (_scanControls) { try { _scanControls.stop(); } catch (_) {} _scanControls = null; }
+  if (_scanReader) { try { _scanReader.reset(); } catch (_) {} _scanReader = null; }
+  const gen = ++_scanGen;
+  _scanStarting = true;
+  _scanBlock.goneSince = null;
+
   try {
     const reader = new ZXing.BrowserMultiFormatReader();
+    _scanReader   = reader;
     _scanActive   = true;
     const videoEl = document.getElementById('scan-video');
     const onDecode = (result, err) => {
-      if (result && _scanActive && Date.now() >= _scanResumeAt) {
-        _scanActive = false;
-        stopScanner();
-        applyScanResult(result.getText());
+      if (gen !== _scanGen) return;                       // veraltete Kamera-Sitzung
+      const now = Date.now();
+      if (result) {
+        const code = result.getText();
+        // Zuletzt gescannter Code: erst wieder annehmen, wenn er ≥ 1,2 s am Stück nicht im Bild war.
+        // (Auch während der Anlaufsperre prüfen, sonst gilt er fälschlich als "weg".)
+        if (code === _scanBlock.code && !(_scanBlock.goneSince && now - _scanBlock.goneSince >= 1200)) {
+          _scanBlock.goneSince = null;
+          return;
+        }
+        if (_scanActive && now >= _scanResumeAt) {
+          _scanActive = false;
+          _scanBlock.code = code;
+          _scanBlock.goneSince = null;
+          stopScanner();
+          applyScanResult(code);
+        }
+      } else if (_scanBlock.code && !_scanBlock.goneSince && now >= _scanResumeAt) {
+        _scanBlock.goneSince = now;                       // nichts erkannt (Anlaufphase der Kamera zählt nicht)
       }
       if (err && !(err instanceof ZXing.NotFoundException)) {
         console.warn('ZXing:', err);
@@ -2197,8 +2252,12 @@ async function startScanner() {
       startBtn.onclick = stopScanner;
     }
     setScanStatus('Barcode in den Rahmen halten…');
+    _scanStarting = false;
+    // Wurde während des Starts schon gestoppt (Tab gewechselt, Ergebnis geöffnet)? Dann Kamera aus.
+    if (gen !== _scanGen) stopScanner();
 
   } catch (err) {
+    _scanStarting = false;
     stopScanner();
     let msg = 'Kamera konnte nicht gestartet werden.';
     if (err.name === 'NotAllowedError') msg = 'Kamera-Zugriff verweigert. Bitte in den Browser-Einstellungen erlauben.';
@@ -2213,7 +2272,12 @@ async function startScanner() {
 
 function stopScanner() {
   _scanActive = false;
-  if (_scanControls) { _scanControls.stop(); _scanControls = null; }
+  _scanGen++;                                   // laufende Erkennung ungültig machen
+  // @zxing/library liefert bei decodeFromConstraints/-VideoDevice KEIN Steuerobjekt zurück
+  // (_scanControls bleibt undefined) – die Dauer-Erkennung lief deshalb nach dem Stoppen weiter
+  // und meldete später noch Barcodes. reader.reset() beendet sie und die Kamera zuverlässig.
+  if (_scanControls) { try { _scanControls.stop(); } catch (_) {} _scanControls = null; }
+  if (_scanReader) { try { _scanReader.reset(); } catch (_) {} _scanReader = null; }
   // ZXing's controls.stop() allein beendet nicht zuverlässig den Kamera-Stream (Track bleibt
   // "live", die Kamera filmt weiter) — Video-Element-Stream deshalb zusätzlich manuell stoppen.
   const scanVideo = document.getElementById('scan-video');
@@ -2633,37 +2697,45 @@ function _formatCategory(tags) {
 }
 
 function _categoryEmoji(tags) {
-  if (!tags) return '🛒';
-  const s = tags.join(' ').toLowerCase();
-  if (/milk|milch|dairy|oat.drink|hafermilch/.test(s)) return '🥛';
-  if (/meat|fleisch|beef|pork|chicken|poultry/.test(s)) return '🥩';
-  if (/fish|fisch|seafood|meeresfrüchte/.test(s)) return '🐟';
-  // Spezifische Gemüse-/Obstsorten VOR den generischen "vegetable"/"fruit"-Treffern prüfen,
-  // sonst landet wegen der breiten OFF-Kategorisierung fast alles beim selben Emoji.
-  if (/tomato|tomate/.test(s)) return '🍅';
-  if (/carrot|karott|möhre|moehre/.test(s)) return '🥕';
-  if (/potato|kartoffel/.test(s)) return '🥔';
-  if (/onion|zwiebel/.test(s)) return '🧅';
-  if (/cucumber|gurke|zucchini|courgette/.test(s)) return '🥒';
-  if (/pepper|paprika/.test(s)) return '🫑';
-  if (/salad|lettuce|salat/.test(s)) return '🥬';
-  if (/broccoli|brokkoli|cauliflower|blumenkohl|cabbage|kohl/.test(s)) return '🥦';
-  if (/mushroom|pilz|champignon/.test(s)) return '🍄';
-  if (/apple|apfel/.test(s)) return '🍎';
-  if (/banana|banane/.test(s)) return '🍌';
-  if (/citrus|orange|zitrone|lemon|limette|lime/.test(s)) return '🍊';
-  if (/berry|beere/.test(s)) return '🍓';
-  if (/grape|traube/.test(s)) return '🍇';
-  if (/melon|melone/.test(s)) return '🍉';
-  if (/vegetable|gemüse/.test(s)) return '🥦';
-  if (/fruit|obst/.test(s)) return '🍎';
-  if (/bread|brot|bakery|bäckerei/.test(s)) return '🍞';
-  if (/chocolate|schokolade/.test(s)) return '🍫';
-  if (/beverage|getränk|drink|juice|saft/.test(s)) return '🥤';
-  if (/cheese|käse/.test(s)) return '🧀';
-  if (/egg|ei/.test(s)) return '🥚';
-  if (/pasta|nudel/.test(s)) return '🍝';
-  if (/legume|hülsenfrucht|bean|bohne|lentil|linse|tofu|soy|soja/.test(s)) return '🫘';
+  if (!tags || !tags.length) return '🛒';
+  // Nur ganze Wörter vergleichen ("en:peppermint" ist kein "pepper", "en:beverages" kein "ei").
+  const s = ' ' + tags.map(t => String(t).toLowerCase().replace(/^[a-z]{2}:/, '').replace(/-/g, ' ')).join(' | ') + ' ';
+  const has = re => new RegExp(`(^|[^a-zäöüß])(${re})(s|es|n|en)?(?![a-zäöüß])`).test(s);
+  const rules = [
+    ['tea|teas|tee|herbal tea|kräutertee|infusion', '🍵'],
+    ['coffee|kaffee', '☕'],
+    ['herb|kräuter|spice|gewürz|peppermint|pfefferminz|mint|minze', '🌿'],
+    ['milk|milch|dairy|oat drink|hafermilch|yogurt|joghurt', '🥛'],
+    ['meat|fleisch|beef|pork|chicken|poultry|sausage|wurst', '🥩'],
+    ['fish|fisch|seafood|meeresfrüchte', '🐟'],
+    ['tomato|tomate', '🍅'],
+    ['carrot|karotte|möhre|moehre', '🥕'],
+    ['potato|kartoffel', '🥔'],
+    ['onion|zwiebel', '🧅'],
+    ['cucumber|gurke|zucchini|courgette', '🥒'],
+    ['bell pepper|sweet pepper|paprika', '🫑'],
+    ['salad|lettuce|salat', '🥬'],
+    ['broccoli|brokkoli|cauliflower|blumenkohl|cabbage|kohl', '🥦'],
+    ['mushroom|pilz|champignon', '🍄'],
+    ['apple|apfel', '🍎'],
+    ['banana|banane', '🍌'],
+    ['citrus|orange|zitrone|lemon|limette|lime', '🍊'],
+    ['berry|berries|beere', '🍓'],
+    ['grape|traube', '🍇'],
+    ['melon|melone', '🍉'],
+    ['nut|nuss|nüsse|almond|mandel|hazelnut', '🥜'],
+    ['honey|honig', '🍯'],
+    ['vegetable|gemüse', '🥦'],
+    ['fruit|obst', '🍎'],
+    ['bread|brot|bakery|bäckerei|biscuit|keks', '🍞'],
+    ['chocolate|schokolade|spread|aufstrich', '🍫'],
+    ['cheese|käse', '🧀'],
+    ['egg|eier', '🥚'],
+    ['pasta|nudel', '🍝'],
+    ['legume|hülsenfrucht|bean|bohne|lentil|linse|tofu|soy|soja', '🫘'],
+    ['beverage|getränk|drink|juice|saft|water|wasser', '🥤'],
+  ];
+  for (const [re, emoji] of rules) if (has(re)) return emoji;
   return '🛒';
 }
 
@@ -3228,93 +3300,9 @@ function renderFoodProfileCard() {
 }
 
 /* ══════════════════════════════════════════
-   EINKAUF ABSCHLIESSEN
+   EINKAUF: jeder abgehakte Artikel gilt als eingekauft
+   (Wertung in features.js: listRecordPurchase / listUndoPurchase)
    ══════════════════════════════════════════ */
-
-function showShoppingDoneDialog() {
-  if (!listItems.length) return;
-  const overlay = document.createElement('div');
-  overlay.className = 'shopping-done-overlay';
-  overlay.id = 'shopping-done-overlay';
-  overlay.innerHTML = `
-    <div class="shopping-done-sheet">
-      <div class="shopping-done-icon">🛍️</div>
-      <h2 class="shopping-done-title">Alles eingekauft?</h2>
-      <p class="shopping-done-sub">Deine ${listItems.length} Artikel werden für deinen Öko-Score gewertet.</p>
-      <button class="shopping-done-yes" onclick="finishShopping(true)">
-        Ja, alles eingekauft
-      </button>
-      <button class="shopping-done-no" onclick="closeShoppingDoneDialog()">
-        Nein, zurück zur Liste
-      </button>
-      <button class="shopping-done-delete" onclick="finishShopping(false)">
-        Nein, trotzdem löschen
-      </button>
-    </div>`;
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeShoppingDoneDialog(); });
-  document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('open'));
-}
-
-function closeShoppingDoneDialog() {
-  const overlay = document.getElementById('shopping-done-overlay');
-  if (!overlay) return;
-  overlay.classList.remove('open');
-  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-}
-
-function finishShopping(scoreIt) {
-  if (scoreIt) {
-    // Nur noch nicht per toggleDone gewertete Swaps zählen
-    const unscored = listItems.filter(i => i.ecoSwap && !i.ecoSwapScored);
-    const swapCount = unscored.length;
-
-    const score = JSON.parse(localStorage.getItem('gruenkorb-score') || '{"total":0,"swaps":0,"purchases":0}');
-    score.purchases += 1;
-    score.swaps     += swapCount;
-    score.total     += swapCount;
-    localStorage.setItem('gruenkorb-score', JSON.stringify(score));
-
-    const history = JSON.parse(localStorage.getItem('gruenkorb-einkauf-history') || '[]');
-    history.push({
-      datum: new Date().toISOString(),
-      punkte: swapCount,
-      footprint: _computeFootprintTotals(listItems),
-      items: listItems.map(i => ({
-        text: i.text, produktId: i.produktId || null,
-        ampel: i.ampel || null, ecoSwap: i.ecoSwap || null,
-      }))
-    });
-    localStorage.setItem('gruenkorb-einkauf-history', JSON.stringify(history));
-
-    // Challenge-Tracking
-    updateChallengeProgress('purchases-10', 1);
-
-    const seasonalCount = listItems.filter(i => i.ampel === 'gruen').length;
-    if (seasonalCount) updateChallengeProgress('regional-seasonal', seasonalCount);
-
-    const meatIds = ['haehnchen','rind','schwein','lamm','lachs','thunfisch','garnelen'];
-    const hasMeat = listItems.some(i => meatIds.includes(i.ecoSwap?.fromErnId) || meatIds.some(mid => _matchErnaehrung(i.text)?.id === mid));
-    if (!hasMeat) updateChallengeProgress('veggie-week', 1);
-
-    if (swapCount) updateChallengeProgress('eco-swaps', swapCount);
-
-    // Punkte, Serie & Abzeichen für den Einkauf (features.js)
-    if (typeof gmOnPurchase === 'function') gmOnPurchase(listItems);
-
-    const totalSwaps = listItems.filter(i => i.ecoSwap).length;
-    const msg = totalSwaps > 0
-      ? `🛍️ Einkauf gespeichert! ${swapCount > 0 ? `+${swapCount} weiterer Punkt${swapCount > 1 ? 'e' : ''}` : 'Punkte bereits vergeben'}`
-      : '🛍️ Einkauf abgeschlossen!';
-    _showToast(msg);
-  }
-
-  // Alles löschen
-  listItems = [];
-  saveList();
-  closeShoppingDoneDialog();
-  renderList();
-}
 
 /* ══════════════════════════════════════════
    RECIPE IMPORT

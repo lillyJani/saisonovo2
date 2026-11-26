@@ -6,7 +6,7 @@
    Wird NACH app.js geladen und nutzt dessen globale Funktionen und Daten
    (_saisondaten, _matchSaisondatenByName, _calculateSaisonScore,
    _getFootprintData, _showToast, …). app.js ruft an wenigen Stellen Hooks auf
-   (gmInitTab, gmOnScan, gmOnPurchase, gmAfterScoreChange) – alle sind mit
+   (gmInitTab, gmOnScan, listRecordPurchase, gmAfterScoreChange) – alle sind mit
    typeof-Prüfung abgesichert, damit die App auch ohne diese Datei läuft.
 
    Neue localStorage-Keys:
@@ -142,7 +142,7 @@ const GM_STREAK_BONI = [
   { tage: 30, pts: 50 },
 ];
 
-// Aktiv = gescannt, gekocht, Einkauf abgeschlossen oder Alternative gewählt.
+// Aktiv = gescannt, gekocht, eingekauft (abgehakt) oder Alternative gewählt.
 function gmRecordActivity(s) {
   const own = !s;
   s = s || gmLoad();
@@ -186,7 +186,7 @@ const GM_BADGES = [
   { id: 'cook-1', kurz: '1 Rezept kochen',      icon: '🍳', titel: 'Erstes Gericht',     text: 'Koche ein Rezept aus dem Kochbuch.',                   wert: st => st.gekocht,        ziel: 1 },
   { id: 'cook-10', kurz: '10 Rezepte kochen',     icon: '👩‍🍳', titel: 'Hobbyköch:in',       text: 'Koche 10 Rezepte aus dem Kochbuch.',                   wert: st => st.gekocht,        ziel: 10 },
   { id: 'cook-saison', kurz: '5 Saisonrezepte kochen', icon: '📅', titel: 'Saisonküche',        text: 'Koche 5 Rezepte, die gerade voll in Saison sind.',     wert: st => st.gekochtSaison,  ziel: 5 },
-  { id: 'buy-1', kurz: '1. Einkauf abschließen',       icon: '🛍️', titel: 'Erster Einkauf',     text: 'Schließe deinen ersten Einkauf in der App ab.',        wert: st => st.einkaeufe,      ziel: 1 },
+  { id: 'buy-1', kurz: '1. Einkauf abhaken',             icon: '🛍️', titel: 'Erster Einkauf',     text: 'Hake auf der Einkaufsliste dein erstes Lebensmittel als eingekauft ab.',        wert: st => st.einkaeufe,      ziel: 1 },
   { id: 'swap-10', kurz: '10 Alternativen wählen',     icon: '♻️', titel: 'Tausch-Talent',      text: 'Wähle 10-mal eine pflanzliche Alternative.',           wert: st => st.alternativen,   ziel: 10 },
   { id: 'streak-3', kurz: '3 Tage in Folge aktiv',    icon: '🔥', titel: 'Dranbleiber:in',     text: 'Sei 3 Tage in Folge aktiv.',                           wert: st => st.besteSerie,     ziel: 3 },
   { id: 'streak-7', kurz: '7 Tage in Folge aktiv',    icon: '⚡', titel: 'Wochenflamme',       text: 'Sei 7 Tage in Folge aktiv.',                           wert: st => st.besteSerie,     ziel: 7 },
@@ -551,8 +551,8 @@ function gmOpenPointsInfo() {
       <div class="gm-rule"><span>🟢 … und es ist gerade in Saison / Öko-Score A–B</span><strong>+3</strong></div>
       <div class="gm-rule"><span>🍳 Rezept aus dem Kochbuch gekocht</span><strong>+10</strong></div>
       <div class="gm-rule"><span>📅 … und es ist voll in Saison</span><strong>+5</strong></div>
-      <div class="gm-rule"><span>🛍️ Einkauf abgeschlossen</span><strong>+5</strong></div>
-      <div class="gm-rule"><span>🟢 je saisonalem Artikel im Einkauf (max. 10)</span><strong>+1</strong></div>
+      <div class="gm-rule"><span>🛍️ Einkaufstag: erstes Lebensmittel auf der Liste abgehakt</span><strong>+5</strong></div>
+      <div class="gm-rule"><span>🟢 je abgehaktem saisonalem Lebensmittel (max. 10 pro Tag)</span><strong>+1</strong></div>
       <div class="gm-rule"><span>♻️ Pflanzliche Alternative gekauft</span><strong>+1</strong></div>
       <div class="gm-rule"><span>🏆 Challenge abgeschlossen</span><strong>+5 – 50</strong></div>
       <div class="gm-rule"><span>🔥 Serie: 3 / 7 / 14 / 30 Tage aktiv</span><strong>+5 / 15 / 25 / 50</strong></div>
@@ -742,21 +742,183 @@ function _gmRenderScanExtra(info, res) {
 
 /* ───────────── Einkauf-Anbindung ───────────── */
 
-// Wird von app.js in finishShopping(true) aufgerufen, bevor die Liste geleert wird.
-function gmOnPurchase(items) {
+/* ───────────── Einkauf: jeder abgehakte Artikel gilt als eingekauft ───────────── */
+// Pro Tag gibt es einen Einkaufs-Eintrag in gruenkorb-einkauf-history ({datum, punkte, footprint, items}).
+// Jedes abgehakte Lebensmittel wird sofort dort eingetragen und gewertet:
+//   • erster Artikel des Tages: +5 Punkte („Einkauf“), zählt als Einkauf (Profil, Challenge „10 Einkäufe“)
+//   • Artikel in Saison: +1 Punkt (max. 10 pro Tag) und Fortschritt „regional & saisonal“
+//   • CO₂/Wasser-Bilanz wird mit jedem Artikel neu berechnet
+//   • „Veggie-Woche“: ein Einkaufstag ohne Fleisch/Fisch zählt, sobald der Tag vorbei ist
+// Wird ein Haken am selben Tag zurückgenommen, verschwindet der Artikel wieder aus der Bilanz.
+// Punkte gibt es pro Artikel nur einmal (kein Mehrfach-Abhaken).
+const LIST_HISTORY_KEY = 'gruenkorb-einkauf-history';
+const _LIST_FLEISCH = ['haehnchen', 'rind', 'schwein', 'lamm', 'lachs', 'thunfisch', 'garnelen'];
+
+function _listDayKey(d) {
+  d = d ? new Date(d) : new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function _listHistory() {
+  try { return JSON.parse(localStorage.getItem(LIST_HISTORY_KEY) || '[]'); } catch (e) { return []; }
+}
+function _listSaveHistory(h) { localStorage.setItem(LIST_HISTORY_KEY, JSON.stringify(h)); }
+
+function _listItemSnapshot(i) {
+  return {
+    listId: i.id, text: i.text, produktId: i.produktId || null, ampel: i.ampel || null, ecoSwap: i.ecoSwap || null,
+    amount: i.amount ?? null, unit: i.unit || null, qty: i.qty || 1,
+  };
+}
+
+function _listHatFleisch(items) {
+  return items.some(i => _LIST_FLEISCH.includes(i.ecoSwap?.fromErnId) ||
+    (typeof _matchErnaehrung === 'function' && _LIST_FLEISCH.includes(_matchErnaehrung(i.text)?.id)));
+}
+
+// Vergangene Einkaufstage abschließen (Veggie-Woche-Challenge).
+function listFinalizeTrips() {
+  const h = _listHistory();
+  const heute = _listDayKey();
+  let changed = false;
+  for (const e of h) {
+    if (!e.perArtikel || e.abgeschlossen || e.tag === heute) continue;
+    e.abgeschlossen = true;
+    changed = true;
+    if ((e.items || []).length && !_listHatFleisch(e.items) && typeof updateChallengeProgress === 'function') {
+      updateChallengeProgress('veggie-week', 1);
+    }
+  }
+  if (changed) _listSaveHistory(h);
+}
+
+function listRecordPurchase(item) {
   try {
+    listFinalizeTrips();
+    const h = _listHistory();
+    const tag = _listDayKey();
+    let e = h.find(x => x.perArtikel && x.tag === tag);
     const s = gmLoad();
-    const saisonal = (items || []).filter(i => i.ampel === 'gruen').length;
-    const pts = 5 + Math.min(10, saisonal);
-    gmAddPoints(pts, `Einkauf${saisonal ? ` (${saisonal}× saisonal)` : ''}`, s);
-    s.purchaseBonus += pts;
+    const meldungen = [];
+
+    if (!e) {
+      e = { datum: new Date().toISOString(), tag, perArtikel: true, punkte: 0, footprint: null, items: [] };
+      h.push(e);
+    }
+    // Erster Einkauf des Tages → zählt als Einkauf
+    if (s.letzterEinkaufTag !== tag) {
+      s.letzterEinkaufTag = tag;
+      s.saisonPunkteHeute = 0;
+      const score = gmLoadScore();
+      score.purchases = (score.purchases || 0) + 1;
+      localStorage.setItem('gruenkorb-score', JSON.stringify(score));
+      gmAddPoints(5, 'Einkauf', s);
+      s.purchaseBonus = (s.purchaseBonus || 0) + 5;
+      e.punkte += 5;
+      meldungen.push('+5 Einkauf');
+      if (typeof updateChallengeProgress === 'function') updateChallengeProgress('purchases-10', 1);
+    }
+
+    e.items = (e.items || []).filter(x => x.listId !== item.id);
+    e.items.push(_listItemSnapshot(item));
+    e.footprint = typeof _computeFootprintTotals === 'function' ? _computeFootprintTotals(e.items) : null;
+
+    if (!item.purchaseScored) {
+      item.purchaseScored = true;
+      if (item.ampel === 'gruen') {
+        if ((s.saisonPunkteHeute || 0) < 10) {
+          s.saisonPunkteHeute = (s.saisonPunkteHeute || 0) + 1;
+          gmAddPoints(1, `${item.text} (saisonal)`, s);
+          s.purchaseBonus = (s.purchaseBonus || 0) + 1;
+          e.punkte += 1;
+          meldungen.push('+1 saisonal');
+        }
+        if (typeof updateChallengeProgress === 'function') updateChallengeProgress('regional-seasonal', 1);
+      }
+    }
+    item.purchaseDay = tag;
+
+    _listSaveHistory(h);
     gmRecordActivity(s);
     gmSave(s);
-    setTimeout(() => _showToast(`⭐ +${pts} Punkte für deinen Einkauf`), 50);
+    _showToast(`🛍️ ${item.text} eingekauft${meldungen.length ? ' · ' + meldungen.join(' · ') : ''}`);
     gmCheckProgress();
-  } catch (e) {
-    console.warn('Gamification (Einkauf):', e);
+  } catch (err) {
+    console.warn('Einkauf werten:', err);
   }
+}
+
+function listUndoPurchase(item) {
+  try {
+    const h = _listHistory();
+    const e = h.find(x => x.perArtikel && x.tag === item.purchaseDay);
+    if (!e || e.abgeschlossen) return;            // vergangene Tage bleiben, wie sie sind
+    e.items = (e.items || []).filter(x => x.listId !== item.id);
+    if (!e.items.length) h.splice(h.indexOf(e), 1);
+    else e.footprint = typeof _computeFootprintTotals === 'function' ? _computeFootprintTotals(e.items) : null;
+    _listSaveHistory(h);
+    delete item.purchaseDay;
+  } catch (err) {
+    console.warn('Einkauf zurücknehmen:', err);
+  }
+}
+
+/* ───────────── Vorschläge beim Hinzufügen ───────────── */
+// Leeres Eingabefeld: „Oft gekauft“ (aus der Einkaufs-Historie) und „Jetzt in Saison“.
+// Was schon offen auf der Liste steht, wird nicht vorgeschlagen.
+function listSuggestions() {
+  const offen = new Set((typeof listItems !== 'undefined' ? listItems : []).filter(i => !i.done).map(i => i.text.trim().toLowerCase()));
+  const oft = new Map();
+  for (const e of _listHistory()) {
+    for (const it of e.items || []) {
+      const k = (it.text || '').trim();
+      if (!k || offen.has(k.toLowerCase())) continue;
+      const o = oft.get(k.toLowerCase()) || { name: k, n: 0, produktId: it.produktId };
+      o.n += 1;
+      oft.set(k.toLowerCase(), o);
+    }
+  }
+  const haeufig = [...oft.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 5);
+  const schon = new Set(haeufig.map(x => x.name.toLowerCase()));
+
+  let saison = [];
+  if (typeof _saisondaten !== 'undefined' && _saisondaten && typeof _calculateSaisonScore === 'function') {
+    const kandidaten = _saisondaten.produkte.filter(p => {
+      const k = p.name.toLowerCase();
+      if (offen.has(k) || schon.has(k)) return false;
+      try { return _calculateSaisonScore(p, [])?.ampel === 'gruen'; } catch (e) { return false; }
+    });
+    // Jeden Tag eine andere Auswahl, aber stabil innerhalb des Tages
+    const seed = Number(_listDayKey().replace(/-/g, ''));
+    const hash = str => { let x = seed; for (const c of str) x = (x * 31 + c.charCodeAt(0)) % 1000003; return x; };
+    saison = kandidaten.sort((a, b) => hash(a.id) - hash(b.id)).slice(0, 6);
+  }
+
+  const emojiVon = (name, produktId) => {
+    const p = produktId && _saisondaten ? _saisondaten.produkte.find(x => x.id === produktId) : (typeof _matchSaisondatenByName === 'function' ? _matchSaisondatenByName(name) : null);
+    if (p) return _getProduktEmoji(p);
+    return (typeof _matchErnaehrung === 'function' && _matchErnaehrung(name)?.emoji) || '🛒';
+  };
+  return {
+    haeufig: haeufig.map(x => ({ name: x.name, emoji: emojiVon(x.name, x.produktId), n: x.n })),
+    saison: saison.map(p => ({ name: p.name, emoji: _getProduktEmoji(p) })),
+  };
+}
+
+// Vergangene Einkaufstage beim Start abschließen (z. B. Veggie-Woche)
+setTimeout(() => { try { listFinalizeTrips(); } catch (e) { console.warn(e); } }, 0);
+
+function listSuggestionsHtml() {
+  const { haeufig, saison } = listSuggestions();
+  const zeile = x => `
+    <div class="autocomplete-item" data-name="${_gmEsc(x.name)}" onmousedown="selectAutocomplete(this.dataset.name)">
+      <span class="autocomplete-emoji">${x.emoji}</span>
+      <span class="autocomplete-name">${_gmEsc(x.name)}</span>
+      ${x.n ? `<span class="autocomplete-meta">${x.n}× gekauft</span>` : ''}
+    </div>`;
+  let html = '';
+  if (haeufig.length) html += `<div class="autocomplete-head">Oft gekauft</div>${haeufig.map(zeile).join('')}`;
+  if (saison.length) html += `<div class="autocomplete-head">Jetzt in Saison</div>${saison.map(zeile).join('')}`;
+  return html;
 }
 
 function gmOnGoodChoice() {
@@ -783,14 +945,21 @@ const KB = {
 
 async function kbLoad() {
   if (KB.rezepte) return KB.rezepte;
-  try {
-    const res = await fetch('rezepte.json', { cache: 'no-store' });
-    const data = await res.json();
-    KB.rezepte = data.rezepte || [];
-  } catch (e) {
-    console.warn('Rezepte konnten nicht geladen werden:', e);
-    KB.rezepte = [];
-  }
+  // rezepte.json = eigene Saisonovo-Rezepte; rezepte-orc.json = übersetzte Rezepte aus dem
+  // Open Recipe Corpus (CC BY-SA 4.0, erzeugt von tools/rezepte-import). Fehlt die zweite Datei, ist das okay.
+  const laden = async (datei, pflicht) => {
+    try {
+      const res = await fetch(datei, { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return (await res.json()).rezepte || [];
+    } catch (e) {
+      if (pflicht) console.warn(`Rezepte (${datei}) konnten nicht geladen werden:`, e);
+      return [];
+    }
+  };
+  const [eigene, korpus] = await Promise.all([laden('rezepte.json', true), laden('rezepte-orc.json', false)]);
+  const ids = new Set(eigene.map(r => r.id));
+  KB.rezepte = [...eigene, ...korpus.filter(r => r && r.id && r.titel && !ids.has(r.id) && r.lizenz)];
   return KB.rezepte;
 }
 kbLoad();
@@ -1101,6 +1270,8 @@ const KB_KATEGORIEN = [
   { key: 'salat',        icon: '🥗', titel: 'Salate',           test: r => r.typ === 'salat' },
   { key: 'fruehstueck',  icon: '🥣', titel: 'Frühstück & Snacks', test: r => r.typ === 'fruehstueck' },
   { key: 'dessert',      icon: '🍰', titel: 'Süßes',            test: r => r.typ === 'dessert' },
+  { key: 'korpus',       icon: '📖', titel: 'Open Recipe Corpus', test: r => !!r.lizenz,
+    hinweis: 'Rezepte aus Wikibooks/Wikisource, maschinell ins Deutsche übersetzt. Lizenz: CC BY-SA 4.0 – Quelle steht bei jedem Rezept.' },
 ];
 
 function _kbKategorieRezepte(key) {
@@ -1188,7 +1359,7 @@ function kbOvRender(keepScroll) {
     body.innerHTML = `
       <h2 class="kb-ov-title">Kategorien</h2>
       <div class="g9 kb-cat-grid">
-        ${KB_KATEGORIEN.map(k => {
+        ${KB_KATEGORIEN.filter(k => k.key !== 'korpus' || _kbKategorieRezepte('korpus').length).map(k => {
           const n = _kbKategorieRezepte(k.key).length;
           return `<button class="kb-cat span-3" onclick="kbOvOpen('kategorie','${k.key}')" ${n ? '' : 'disabled'}>
             <span class="kb-cat-icon">${k.icon}</span>
@@ -1296,6 +1467,25 @@ function _kbCookedToday(id) {
   return s.cooked.log.some(l => l.id === id && l.d === today);
 }
 
+// Namensnennung für Rezepte aus dem Open Recipe Corpus (CC BY-SA 4.0):
+// Titel + Urheber, Link zur Originalquelle (Revision), Versionsgeschichte, Lizenz mit Link, Änderungen.
+const _KB_SPRACHE = { pl: 'Polnischen', en: 'Englischen' };
+function _kbLizenzHtml(l) {
+  const a = (url, text) => url && /^https:\/\//.test(url)
+    ? `<a href="${_gmEsc(url)}" target="_blank" rel="noopener">${_gmEsc(text)}</a>` : _gmEsc(text);
+  return `
+      <div class="kb-license card">
+        <h3>Quelle &amp; Lizenz</h3>
+        <p>„${a(l.quelle || l.quelleSeite, l.titel || 'Originalrezept')}“${l.urheber ? ` von ${a(l.versionen, l.urheber)}` : ''},
+          lizenziert unter ${a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'CC BY-SA 4.0')}.</p>
+        <p>Über das ${a(l.korpusUrl, l.korpus || 'Open Recipe Corpus')}${l.korpusId ? ` (${_gmEsc(l.korpusId)})` : ''}.
+          ${l.maschinell ? `Maschinell aus dem ${_KB_SPRACHE[l.originalsprache] || 'Original'} übersetzt – kleine Fehler sind möglich.` : ''}</p>
+        ${l.aenderungen ? `<p class="kb-license-changes">Änderungen: ${_gmEsc(l.aenderungen)}.</p>` : ''}
+        <p>Diese deutsche Fassung steht ebenfalls unter ${a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'CC BY-SA 4.0')}.
+          ${l.versionen ? `Die Autorinnen und Autoren findest du in der ${a(l.versionen, 'Versionsgeschichte')}.` : ''}</p>
+      </div>`;
+}
+
 // Gemeinsamer Inhalt von Rezeptseite und Rezept-Overlay.
 function _kbRecipeBodyHtml(r, info, inOverlay) {
   const co2Lbl = _kbCo2Label(info.co2Portion);
@@ -1309,7 +1499,7 @@ function _kbRecipeBodyHtml(r, info, inOverlay) {
     return `
       <li class="kb-ing"${klick}>
         <span class="kb-ing-amount">${_gmEsc(menge)}</span>
-        <span class="kb-ing-name">${z.produktId && typeof produktIcon === 'function' ? produktIcon(z.produktId, 'pi-ing') : ''}${_gmEsc(z.name)}</span>
+        <span class="kb-ing-name">${z.produktId && typeof produktIcon === 'function' ? produktIcon(z.produktId, 'pi-ing') : ''}${_gmEsc(z.name)}${z.hinweis ? `<small class="kb-ing-note">${_gmEsc(z.hinweis)}</small>` : ''}</span>
         ${ampelBadge(z.ampel)}
       </li>`;
   }).join('');
@@ -1353,6 +1543,7 @@ function _kbRecipeBodyHtml(r, info, inOverlay) {
 
       ${schritteHtml ? `<h2 style="margin-top:var(--s-xl)">Zubereitung</h2>${schritteHtml}` : ''}
       ${r.quelle ? `<a class="btn-outline kb-source-link" href="${_gmEsc(r.quelle)}" target="_blank" rel="noopener">${/instagram\.com/i.test(r.quelle) ? 'Zum Instagram-Beitrag ↗' : 'Zum Originalrezept ↗'}</a>` : ''}
+      ${r.lizenz ? _kbLizenzHtml(r.lizenz) : ''}
       ${KB.temp && r.id === KB.temp.id ? `<button class="btn-outline kb-import-save-big" onclick="kbImportSave()">♡ Im Kochbuch speichern</button>` : ''}
 
       <div class="kb-cook-card">
@@ -2295,9 +2486,10 @@ async function scanLookup(rawCode) {
   // 1. Eigenes Backend
   if (!_scanBackendDown && SCAN_API_BASE) {
     try {
-      const { res, data } = await _fetchJson(`${SCAN_API_BASE}scan.php?ean=${encodeURIComponent(code)}`, 20000);
+      const plz = scanGetPlz();
+      const { res, data } = await _fetchJson(`${SCAN_API_BASE}scan.php?ean=${encodeURIComponent(code)}${plz ? '&plz=' + plz : ''}`, 20000);
       if (data && data.status === 1 && data.product) {
-        return { product: data.product, via: 'backend', cache: data.cache || null, warnings: data.warnings || [] };
+        return { code: data.code || code, product: data.product, via: 'backend', cache: data.cache || null, warnings: data.warnings || [] };
       }
       if (data && data.error) {
         if (data.error.code === 'invalid_ean') return { error: 'invalid_ean', message: _SCAN_MSG.invalid_ean };
@@ -2332,7 +2524,7 @@ async function scanLookup(rawCode) {
       product.price_summary = scanPriceSummary(prices);
     }
     product.sustainability = scanSustainability(product);
-    return { product, via: 'direct', cache: null, warnings: prices ? [] : ['Preise konnten nicht geladen werden.'] };
+    return { code, product, via: 'direct', cache: null, warnings: prices ? [] : ['Preise konnten nicht geladen werden.'] };
   } catch (e) {
     console.error('Produktabfrage:', e);
     return { error: 'offline', message: e?.name === 'AbortError' ? _SCAN_MSG.timeout : _SCAN_MSG.offline };
@@ -2356,7 +2548,7 @@ async function _scanFetchOpenPrices(code) {
 // Entspricht Saisonovo\Service\PriceSummary (PHP)
 function scanPriceSummary(prices, country = 'DE', currency = 'EUR', maxAgeDays = 365) {
   const cutoff = new Date(Date.now() - maxAgeDays * 864e5).toISOString().slice(0, 10);
-  const recent = prices.filter(p => p.currency === currency && (p.date || '') >= cutoff && p.price_per == null);
+  const recent = prices.filter(p => !['online', 'catalog'].includes(p.kind) && p.currency === currency && (p.date || '') >= cutoff && p.price_per == null);
   if (!recent.length) return null;
   const local = recent.filter(p => (p.country_code || '').toUpperCase() === country);
   const use = local.length ? local : recent;
@@ -2413,6 +2605,7 @@ function scanRenderEnrichment(product, result) {
     box.id = 'scan-enrich';
     anchor.parentNode.insertBefore(box, anchor);
   }
+  window._scanLast = product ? { code: result?.code || null, product } : null;
   if (!box) return;
   if (!product) { box.innerHTML = ''; return; }
 
@@ -2424,21 +2617,21 @@ function scanRenderEnrichment(product, result) {
     const range = sum.min === sum.max ? _eur(sum.min, sum.currency) : `${_eur(sum.min, sum.currency)} – ${_eur(sum.max, sum.currency)}`;
     const wo = sum.scope === 'all' ? 'aus verschiedenen Ländern' : `aus ${_SCAN_LAND[sum.scope] || sum.scope}`;
     const liste = prices
-      .filter(p => p.currency === sum.currency && (sum.scope === 'all' || (p.country_code || '').toUpperCase() === sum.scope) && (p.date || '') >= sum.since && p.price_per == null)
+      .filter(p => !['online', 'catalog'].includes(p.kind) && p.currency === sum.currency && (sum.scope === 'all' || (p.country_code || '').toUpperCase() === sum.scope) && (p.date || '') >= sum.since && p.price_per == null)
       .slice(0, 3)
       .map(p => `<li><span>${esc([p.store, p.city].filter(Boolean).join(', ') || 'Markt unbekannt')}<small>${_datum(p.date)}${p.is_discounted ? ' · Angebot' : ''}</small></span><b>${_eur(p.price, p.currency)}</b></li>`).join('');
     preisHtml = `
-      <div class="scan-price-top"><span class="scan-enrich-label">Preis</span><span class="scan-price-range">${range}</span></div>
+      <div class="scan-price-top"><span class="scan-enrich-label">${(product.price_offers || []).length ? 'Gemeldete Preise' : 'Preis'}</span><span class="scan-price-range">${range}</span></div>
       <div class="scan-price-sub">Ø ${_eur(sum.median, sum.currency)} · ${sum.count} ${sum.count === 1 ? 'Meldung' : 'Meldungen'} ${wo} im letzten Jahr</div>
       ${liste ? `<ul class="scan-price-list">${liste}</ul>` : ''}`;
-  } else if (prices.length) {
-    const p = prices[0];
+  } else if (prices.some(p => !['online', 'catalog'].includes(p.kind))) {
+    const p = prices.find(p => !['online', 'catalog'].includes(p.kind));
     preisHtml = `
-      <div class="scan-price-top"><span class="scan-enrich-label">Preis</span><span class="scan-price-range">${_eur(p.price, p.currency)}</span></div>
+      <div class="scan-price-top"><span class="scan-enrich-label">${(product.price_offers || []).length ? 'Gemeldete Preise' : 'Preis'}</span><span class="scan-price-range">${_eur(p.price, p.currency)}</span></div>
       <div class="scan-price-sub">Letzte Meldung vom ${_datum(p.date)}${p.store ? ' · ' + esc(p.store) : ''}${p.country_code ? ' (' + esc(p.country_code) + ')' : ''} – älter als ein Jahr</div>`;
   } else {
     preisHtml = `
-      <div class="scan-price-top"><span class="scan-enrich-label">Preis</span><span class="scan-price-none">noch keine Daten</span></div>
+      <div class="scan-price-top"><span class="scan-enrich-label">${(product.price_offers || []).length ? 'Gemeldete Preise' : 'Preis'}</span><span class="scan-price-none">noch keine Daten</span></div>
       <div class="scan-price-sub">Für dieses Produkt wurden noch keine Preise gemeldet.</div>`;
   }
 
@@ -2458,7 +2651,13 @@ function scanRenderEnrichment(product, result) {
   const stand = result?.cache?.prices_fetched_at ? new Date(result.cache.prices_fetched_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : null;
   const quelle = `Preise: Open Prices (Community)${stand ? ' · Stand ' + stand : ''}${result?.cache?.stale ? ' · ältere Daten' : ''}`;
 
-  box.innerHTML = `<div class="scan-enrich">${preisHtml}${nachhaltig}<div class="scan-enrich-src">${quelle}</div></div>`;
+  const markt = scanOffersHtml(product.price_offers, result?.cache?.pending_sources);
+  const mitMarkt = markt ? `${markt}<div class="scan-enrich-sep"></div>` : '';
+  const quelleText = (product.price_offers || []).length
+    ? quelle.replace('Preise: Open Prices (Community)', 'Preise: REWE über ' + [...new Set(product.price_offers.map(o => _SCAN_OFFER_SRC[o.source]?.via).filter(Boolean))].join(', ') + ' · Open Prices (Community)')
+    : quelle;
+  box.innerHTML = `<div class="scan-enrich">${mitMarkt}${preisHtml}${nachhaltig}<div class="scan-enrich-src">${quelleText}</div></div>`;
+  scanSchedulePendingRefresh(result);
 }
 
 // Bei PLU- oder Namenssuche gibt es keine EAN-Preise → Block leeren
@@ -2468,3 +2667,417 @@ function scanRenderEnrichment(product, result) {
     window[fn] = function (...args) { scanRenderEnrichment(null); return orig.apply(this, args); };
   }
 });
+
+
+/* ══════════════════════════════════════════════════════════════════
+   GESCANNTE PRODUKTE AUF DER EINKAUFSLISTE
+   - "Zur Einkaufsliste hinzufügen" im Scanner bleibt im Scanner (kein Sprung zur Liste,
+     kein automatisches Öffnen des Artikels) und speichert die gescannten Daten am Artikel.
+   - Die Detailseite eines Artikels zeigt diese Daten (Öko-Score, Nutri-Score, Siegel,
+     Verpackung, Preis …). Fehlen sie bei älteren Artikeln, werden sie über den Scan-Verlauf
+     (EAN) einmalig nachgeladen.
+   ══════════════════════════════════════════════════════════════════ */
+
+function scanSnapshot(code, p) {
+  if (!p) return null;
+  const n = p.sustainability || (typeof scanSustainability === 'function' ? scanSustainability(p) : {});
+  const origins = typeof _parseOriginCountries === 'function' ? _parseOriginCountries(p.origins_tags) : [];
+  return {
+    ean: code || null,
+    name: p.product_name_de || p.product_name || null,
+    brand: p.brands || null,
+    quantity: p.quantity || null,
+    emoji: typeof _categoryEmoji === 'function' ? _categoryEmoji(p.categories_tags) : null,
+    ecoscore: n.ecoscore_grade || null,
+    nutriscore: n.nutriscore_grade || null,
+    nova: n.nova_group || null,
+    organic: !!n.organic,
+    labels: (n.labels || []).slice(0, 8),
+    packaging: (n.packaging || []).slice(0, 6),
+    origins: origins.length ? origins.join(', ') : (p.origins || p.manufacturing_places || null),
+    category: typeof _formatCategory === 'function' ? _formatCategory(p.categories_tags) : null,
+    categories: (Array.isArray(p.categories_tags) ? p.categories_tags : []).slice(0, 15),
+    price_summary: p.price_summary || null,
+    price_offers: Array.isArray(p.price_offers) ? p.price_offers : [],
+    fetched_at: new Date().toISOString(),
+  };
+}
+
+// Hinzufügen aus dem Scanner: im Scanner bleiben, Daten am Artikel speichern
+const _scanOrigAddItem = addItem;
+window.addItem = function (value) {
+  if (activeTab !== 'scan') return _scanOrigAddItem(value);
+  const text = String(value || '').trim();
+  if (!text) return;
+
+  const last = window._scanLast;
+  const lastName = last?.product ? (last.product.product_name_de || last.product.product_name || '') : '';
+  const scan = last && lastName.trim().toLowerCase() === text.toLowerCase() ? scanSnapshot(last.code, last.product) : null;
+
+  // Gleiches Produkt = gleiche EAN. Gleicher Name, aber anderes Produkt (z. B. Pfefferminze von
+  // Lebensbaum und von Sonnentor) wird ein eigener Artikel mit Markenzusatz.
+  let item = null;
+  let label = text;
+  const offen = listItems.filter(i => !i.done);
+  if (scan?.ean) {
+    item = offen.find(i => i.scan?.ean === scan.ean) || null;
+    const namensgleich = offen.find(i => i.text.trim().toLowerCase() === text.toLowerCase());
+    if (!item && namensgleich) {
+      if (!namensgleich.scan) item = namensgleich;                 // bisher ohne Scan-Daten → übernehmen
+      else if (scan.brand) label = `${text} (${String(scan.brand).split(',')[0].trim()})`;
+    }
+    if (!item && label !== text) item = offen.find(i => i.text === label && i.scan?.ean === scan.ean) || null;
+  } else {
+    item = offen.find(i => i.text.trim().toLowerCase() === text.toLowerCase()) || null;
+  }
+  if (item) {
+    item.qty = (item.qty || 1) + 1;
+    if (scan) item.scan = scan;
+  } else {
+    let ampel = null, saisonText = null, produktId = null;
+    const produkt = _matchSaisondatenByName(text);
+    if (produkt && _saisondaten) {
+      const score = _calculateSaisonScore(produkt, []);
+      if (score) { ampel = score.ampel; saisonText = score.text; }
+      produktId = produkt.id;
+    }
+    item = { text: label, ampel, saisonText, produktId, done: false, id: Date.now(), qty: 1 };
+    if (scan) item.scan = scan;
+    listItems.push(item);
+  }
+  saveList();
+
+  const btn = document.getElementById('scan-add-btn');
+  if (btn) btn.textContent = item.qty > 1 ? `✓ Auf der Einkaufsliste (×${item.qty})` : '✓ Auf der Einkaufsliste';
+  _showToast(item.qty > 1 ? `🛒 ${item.text}: jetzt ${item.qty}×` : `🛒 ${item.text} hinzugefügt`);
+};
+
+function scanItemSubtitle(item) {
+  const sc = item.scan;
+  if (!sc) return '';
+  return _gmEsc([sc.brand, sc.quantity].filter(Boolean).join(' · ') || 'Gescanntes Produkt');
+}
+
+function _scanCodeFromHistory(text) {
+  try {
+    const hist = JSON.parse(localStorage.getItem('gruenkorb-scan-history') || '[]');
+    const t = String(text || '').trim().toLowerCase();
+    return hist.find(h => h.code && String(h.name || '').trim().toLowerCase() === t)?.code || null;
+  } catch (_) { return null; }
+}
+
+function scanItemInfoHtml(item) {
+  if (item.scan) return _scanItemCard(item.scan);
+  // Älterer Artikel ohne gespeicherte Daten, aber im Scan-Verlauf bekannt → nachladen
+  if (item.produktId) return '';
+  const code = _scanCodeFromHistory(item.text);
+  if (!code) return '';
+  setTimeout(() => _scanItemBackfill(item.id, code), 0);
+  return `<div id="item-scan-info" class="card item-scan-card"><div class="item-scan-loading"><span class="recipe-loading-spinner"></span> Produktdaten werden geladen …</div></div>`;
+}
+
+async function _scanItemBackfill(itemId, code) {
+  const res = await scanLookup(code);
+  const box = document.getElementById('item-scan-info');
+  const item = listItems.find(i => i.id === itemId);
+  if (!item) return;
+  if (res.error || !res.product) {
+    if (box) box.innerHTML = `<div class="item-scan-loading">Produktdaten konnten gerade nicht geladen werden.</div>`;
+    return;
+  }
+  item.scan = scanSnapshot(code, res.product);
+  saveList();
+  if (box) box.outerHTML = _scanItemCard(item.scan);
+}
+
+function _scanItemCard(sc) {
+  const esc = _gmEsc;
+  const grade = sc.ecoscore ? sc.ecoscore.toUpperCase().replace('-PLUS', '+') : '?';
+  const gradeCls = sc.ecoscore ? `ecoscore-${sc.ecoscore}` : '';
+  const row = (label, value) => value ? `<div class="scan-detail-row"><span class="scan-detail-label">${label}</span><span class="scan-detail-value">${value}</span></div>` : '';
+  const chips = (list, cls = '') => list.map(c => `<span class="scan-chip ${cls}">${esc(c)}</span>`).join('');
+  const siegel = [...(sc.organic ? ['Bio'] : []), ...(sc.labels || []).map(_scanTag).filter(l => l !== 'Bio' && !/^[a-z]{2}:/.test(l))].slice(0, 5);
+  const pack = [...new Set((sc.packaging || []).map(_scanTag))].slice(0, 4);
+  const ps = sc.price_summary;
+  const preis = ps
+    ? `${ps.min === ps.max ? _eur(ps.min, ps.currency) : `${_eur(ps.min, ps.currency)} – ${_eur(ps.max, ps.currency)}`} <small>Ø ${_eur(ps.median, ps.currency)}</small>`
+    : '';
+  const state = typeof _ampelFromGrade === 'function' ? _ampelFromGrade(sc.ecoscore ? sc.ecoscore.toUpperCase() : '') : { label: '' };
+  const msg = typeof _ecoscoreMsg === 'function' ? _ecoscoreMsg(sc.ecoscore ? sc.ecoscore.toUpperCase() : '') : '';
+
+  return `
+    <div class="card item-scan-card">
+      <div class="item-scan-head">
+        <div>
+          <div class="detail-card-label" style="margin-bottom:4px">Gescanntes Produkt</div>
+          <div class="item-scan-state">${esc(state.label)}</div>
+        </div>
+        <div class="scan-result-score-badge ${gradeCls}">
+          <div class="scan-result-score-label">Öko-Score</div>
+          <div class="scan-result-score">${grade}</div>
+        </div>
+      </div>
+      <div class="scan-detail-rows">
+        ${row('Nutri-Score', sc.nutriscore ? `Score ${sc.nutriscore.toUpperCase()}` : 'Nicht verfügbar')}
+        ${row('Verarbeitung', sc.nova ? `NOVA ${sc.nova}` : '')}
+        ${row('Herkunft', esc(sc.origins || 'Nicht angegeben'))}
+        ${row('Kategorie', esc(sc.category || ''))}
+        ${row('Preis', preis)}
+      </div>
+      ${(sc.price_offers || []).length ? `<div class="item-scan-offers">${scanOffersHtml(sc.price_offers, [])}</div>` : ''}
+      ${siegel.length ? `<div class="scan-enrich-row"><span class="scan-enrich-label">Siegel</span><span class="scan-chips">${chips(siegel)}</span></div>` : ''}
+      ${pack.length ? `<div class="scan-enrich-row"><span class="scan-enrich-label">Verpackung</span><span class="scan-chips">${chips(pack, 'scan-chip--pack')}</span></div>` : ''}
+      ${msg ? `<div class="scan-success-message${state.ampel ? ' ampel-' + state.ampel : ''}" style="margin-top:12px">${esc(msg)}</div>` : ''}
+      <div class="scan-enrich-src">${sc.ean ? `EAN ${esc(sc.ean)} · ` : ''}Daten: Open Food Facts${ps ? ', Open Prices' : ''}${(sc.price_offers || []).length ? ', REWE' : ''}</div>
+    </div>`;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   SUPERMARKT-PREISE (Backend: Pepesto REWE-Katalog, Apify REWE mit PLZ)
+   ══════════════════════════════════════════════════════════════════ */
+const _SCAN_OFFER_SRC = {
+  pepesto_rewe: { label: 'REWE', sub: 'Online-Katalog, tagesaktuell', via: 'Pepesto' },
+  apify_rewe:   { label: 'REWE', sub: 'Markt in deiner Nähe', via: 'Apify' },
+};
+
+function scanGetPlz() {
+  const v = (localStorage.getItem('gruenkorb-plz') || '').trim();
+  return /^\d{5}$/.test(v) ? v : '';
+}
+
+function scanOffersHtml(offers, pending) {
+  const list = Array.isArray(offers) ? offers : [];
+  const wait = (Array.isArray(pending) ? pending : []).filter(s => _SCAN_OFFER_SRC[s] && !list.some(o => o.source === s));
+  if (!list.length && !wait.length) return '';
+  const esc = _gmEsc;
+  const rows = list.map(o => {
+    const src = _SCAN_OFFER_SRC[o.source] || { label: o.store || 'Markt', sub: '' };
+    const sub = [src.sub + (o.postcode ? ` (PLZ ${esc(o.postcode)})` : ''), o.unit_price ? esc(o.unit_price) : ''].filter(Boolean).join(' · ');
+    const name = o.matched_name ? `<small class="scan-offer-name">${esc(o.matched_name)}</small>` : '';
+    const link = o.url ? ` href="${esc(o.url)}" target="_blank" rel="noopener"` : '';
+    return `<li><${o.url ? 'a' : 'span'} class="scan-offer-shop"${link}><b>${esc(src.label)}</b><small>${sub}</small>${name}</${o.url ? 'a' : 'span'}>
+      <span class="scan-offer-price">${o.is_discounted ? '<span class="scan-offer-promo">Angebot</span>' : ''}${_eur(o.price, o.currency)}</span></li>`;
+  }).join('');
+  const waitRows = wait.map(s => `<li class="scan-offer-wait"><span class="scan-offer-shop"><b>${_SCAN_OFFER_SRC[s].label}</b><small>${_SCAN_OFFER_SRC[s].sub}</small></span><span class="scan-offer-price"><span class="recipe-loading-spinner"></span> wird abgefragt</span></li>`).join('');
+  return `<div class="scan-price-top"><span class="scan-enrich-label">Im Supermarkt</span></div><ul class="scan-offer-list">${rows}${waitRows}</ul>`;
+}
+
+// Läuft noch eine Abfrage (Apify), nach 20 s / 45 s / 90 s erneut fragen – solange dieselbe Karte offen ist
+let _scanPendingTimer = null;
+function scanSchedulePendingRefresh(result, versuch = 0) {
+  clearTimeout(_scanPendingTimer);
+  const pending = result?.cache?.pending_sources || [];
+  const code = result?.code;
+  if (!pending.length || !code || versuch >= 3) return;
+  _scanPendingTimer = setTimeout(async () => {
+    const res = document.getElementById('scan-result');
+    if (!res || res.style.display !== 'block' || window._scanLast?.code !== code) return;
+    const neu = await scanLookup(code);
+    if (neu.error || window._scanLast?.code !== code || document.getElementById('scan-result')?.style.display !== 'block') return;
+    scanRenderEnrichment(neu.product, neu);
+    // auch gespeicherte Daten des Listenartikels aktualisieren
+    const item = listItems.find(i => i.scan?.ean === code);
+    if (item) { item.scan = scanSnapshot(code, neu.product); saveList(); }
+    if ((neu.cache?.pending_sources || []).length) scanSchedulePendingRefresh(neu, versuch + 1);
+  }, [20000, 45000, 90000][versuch]);
+}
+
+// Postleitzahl in den Einstellungen: beim Öffnen vorbelegen, mit "Speichern" übernehmen
+(function () {
+  const origToggle = window.toggleEditMode;
+  if (typeof origToggle === 'function') {
+    window.toggleEditMode = function (...a) {
+      const r = origToggle.apply(this, a);
+      const inp = document.getElementById('edit-plz');
+      if (inp) inp.value = localStorage.getItem('gruenkorb-plz') || '';
+      return r;
+    };
+  }
+  const origSave = window.saveProfile;
+  if (typeof origSave === 'function') {
+    window.saveProfile = function (...a) {
+      const inp = document.getElementById('edit-plz');
+      if (inp) {
+        const v = inp.value.replace(/\D/g, '');
+        if (v === '') localStorage.removeItem('gruenkorb-plz');
+        else if (/^\d{5}$/.test(v)) localStorage.setItem('gruenkorb-plz', v);
+        else { _showToast('Bitte eine 5-stellige Postleitzahl eingeben'); inp.focus(); return; }
+      }
+      return origSave.apply(this, a);
+    };
+  }
+})();
+
+
+
+/* ══════════════════════════════════════════════════════════════════
+   EINKAUFSLISTE NACH SUPERMARKT-BEREICHEN SORTIEREN
+   Reihenfolge wie ein typischer Rundgang durch den Markt. Zuordnung:
+   1. eigene Zuordnung des Artikels (item.kat), 2. gescannte OFF-Kategorien,
+   3. Stichwörter im Namen (verarbeitete Produkte wie "Paprikapulver", "Tomatenmark"),
+   4. Saisonkalender (frisches Obst & Gemüse), 5. Lebensmitteldaten (Milch, Eier, Fleisch, Fisch).
+   ══════════════════════════════════════════════════════════════════ */
+const LIST_KATEGORIEN = [
+  { key: 'obst_gemuese', name: 'Obst & Gemüse',            icon: '🥦',
+    re: /\b(ingwer|petersilie|basilikum|schnittlauch|dill|koriander frisch|rosmarin frisch|kräuter frisch|frische kräuter|sprossen|pilze)\b/,
+    off: /^(fruits|vegetables|fresh-vegetables|fresh-fruits|fruits-and-vegetables-based-foods|fresh-plant-based-foods|mushrooms|fresh-herbs)$/ },
+  { key: 'brot', name: 'Brot & Backwaren',                  icon: '🥖',
+    re: /(brot|brötchen|broetchen|toast|baguette|croissant|brezel|knäcke|semmel|ciabatta|tortilla|wraps?\b|fladenbrot|zwieback)/,
+    off: /^(breads|bakery-products|viennoiseries|crispbreads|sliced-breads|wraps)$/ },
+  { key: 'kuehl', name: 'Kühlregal: Milch, Käse & Eier',     icon: '🧀',
+    re: /(milch(?!schokolade|reis)|joghurt|jogurt|quark|käse|kaese|butter(?!rübe|milch)|sahne|schmand|crème fra|creme fra|mozzarella|feta|halloumi|skyr|kefir|margarine|\beier?\b|haferdrink|sojadrink|mandeldrink|tofu|hummus|frischkäse)/,
+    off: /^(dairies|milks|cheeses|yogurts|eggs|butters|creams|plant-based-milk-alternatives|dairy-substitutes|margarines|tofus|fermented-milk-products)$/ },
+  { key: 'fleisch', name: 'Fleisch, Wurst & Fisch',          icon: '🥩',
+    re: /(fleisch|hähnchen|haehnchen|hühnchen|huhn|pute|rind|schwein|hackfleisch|\bhack\b|wurst|würstchen|salami|schinken|speck|bacon|lachs|thunfisch|fisch|garnelen|forelle|kabeljau|hering)/,
+    off: /^(meats|poultries|sausages|hams|fishes|seafood|smoked-fishes|meat-alternatives)$/ },
+  { key: 'vorrat', name: 'Nudeln, Reis & Konserven',         icon: '🍝',
+    re: /(nudel|pasta|spaghetti|penne|fusilli|lasagne|reis\b|basmati|couscous|bulgur|quinoa|linsen|kichererbsen|kidneybohnen|bohnen in|dose\b|konserve|passiert|tomatenmark|gehackte tomaten|mehl|grieß|brühe|bouillon|polenta|gnocchi)/,
+    off: /^(pastas|rices|canned-foods|legumes|flours|cereal-grains|soups|broths|canned-vegetables|tomato-sauces)$/ },
+  { key: 'fruehstueck', name: 'Frühstück & Süßes',          icon: '🥣',
+    re: /(müsli|muesli|haferflocken|cornflakes|granola|marmelade|konfitüre|honig|nutella|aufstrich|schokolade|schoko|kekse?\b|chips|gummibär|süßigkeit|süßwaren|kuchen|riegel|nüsse|nuss\b|mandeln|kerne\b|rosinen|trockenobst|popcorn)/,
+    off: /^(breakfasts|breakfast-cereals|spreads|sweet-spreads|jams|honeys|chocolates|biscuits|snacks|sweet-snacks|salty-snacks|confectioneries|nuts|dried-fruits|cakes)$/ },
+  { key: 'gewuerze', name: 'Gewürze, Öle & Backzutaten',     icon: '🧂',
+    re: /(\bsalz\b|\bpfeffer\b|gewürz|pulver|curry|zimt|oregano|kurkuma|\böl\b|olivenöl|rapsöl|sonnenblumenöl|essig|zucker|backpulver|hefe|vanille|senf|ketchup|mayo|soße|sauce|sojasoße|tahin|kokosmilch|speisestärke)/,
+    off: /^(condiments|sauces|spices|herbs-and-spices|oils|vegetable-oils|vinegars|sugars|baking-aids|salts|mustards|ketchup)$/ },
+  { key: 'getraenke', name: 'Getränke, Tee & Kaffee',        icon: '🧃',
+    re: /(wasser|saft\b|säfte|schorle|limo|cola|bier|wein|sekt|\btee\b|tee$|teebeutel|kräutertee|kaffee|espresso|kakao|smoothie|sirup|eistee)/,
+    off: /^(beverages|teas|herbal-teas|coffees|waters|juices|sodas|alcoholic-beverages|plant-based-beverages|hot-beverages)$/ },
+  { key: 'tk', name: 'Tiefkühl',                             icon: '❄️',
+    re: /(\btk\b|tk-|tiefkühl|tiefgekühlt|gefroren|\beis\b|eiscreme|pizza)/,
+    off: /^(frozen-foods|frozen-desserts|ice-creams|frozen-pizzas|frozen-vegetables)$/ },
+  { key: 'drogerie', name: 'Drogerie & Haushalt',            icon: '🧴',
+    re: /(klopapier|toilettenpapier|küchenrolle|küchenpapier|taschentücher|spülmittel|spültabs|waschmittel|weichspüler|zahnpasta|zahnbürste|shampoo|duschgel|seife|deo|müllbeutel|alufolie|frischhaltefolie|backpapier|schwamm|putzmittel|batterien|windeln)/,
+    off: null },
+  { key: 'sonstiges', name: 'Sonstiges', icon: '🛒', re: null, off: null },
+];
+// Verarbeitete Produkte, die trotz Obst-/Gemüse-Namen NICHT in die Frische-Abteilung gehören
+const _LIST_VERARBEITET = /(mark|pulver|saft|kerne|chips|mus\b|konserve|dose|marmelade|konfitüre|tee\b|öl\b|essig|sirup|getrocknet|tk\b|tiefkühl|riegel|aufstrich|chutney|kompott|eingelegt)/;
+
+function listKategorie(item) {
+  if (item.kat && LIST_KATEGORIEN.some(k => k.key === item.kat)) return item.kat;   // eigene Zuordnung
+  const text = String(item.text || '').toLowerCase();
+
+  // 1. Gescannte Kategorien (Open Food Facts) – genauste Quelle; die spezifischste (letzte) zuerst
+  const tags = (item.scan?.categories || []).map(t => String(t).replace(/^[a-z]{2}:/, '')).reverse();
+  for (const t of tags) {
+    const k = LIST_KATEGORIEN.find(k => k.off && k.off.test(t));
+    if (k) return k.key;
+  }
+
+  // 2. Stichwörter für verarbeitete Produkte und Nicht-Lebensmittel
+  const verarbeitet = _LIST_VERARBEITET.test(text);
+  if (verarbeitet || !item.produktId) {
+    for (const k of LIST_KATEGORIEN) {
+      if (k.key !== 'obst_gemuese' && k.re && k.re.test(text)) return k.key;
+    }
+  }
+
+  // 3. Frisches Obst & Gemüse aus dem Saisonkalender (Hülsenfrüchte wie Kichererbsen gibt es im
+  //    Supermarkt aber getrocknet oder in der Dose → Vorrat)
+  if (['kichererbse'].includes(item.produktId) || /kichererbse/.test(text)) return 'vorrat';
+  const produkt = item.produktId ? true : (typeof _matchSaisondatenByName === 'function' && _matchSaisondatenByName(item.text));
+  if (produkt && !verarbeitet) return 'obst_gemuese';
+
+  // 4. Lebensmitteldaten (Milchprodukte, Eier, Fleisch, Fisch)
+  const ern = typeof _matchErnaehrung === 'function' ? _matchErnaehrung(item.text) : null;
+  if (ern?._kategorie) {
+    if (['milchprodukte', 'eier'].includes(ern._kategorie)) return 'kuehl';
+    if (['fleisch', 'fisch'].includes(ern._kategorie)) return 'fleisch';
+  }
+
+  // 5. Restliche Stichwörter (inkl. frische Kräuter)
+  for (const k of LIST_KATEGORIEN) {
+    if (k.re && k.re.test(text)) return k.key;
+  }
+  return 'sonstiges';
+}
+
+/** @returns {{key,name,icon,items}[]} nicht-leere Gruppen in Markt-Reihenfolge, Artikel alphabetisch */
+function listGroupItems(items) {
+  const gruppen = new Map(LIST_KATEGORIEN.map(k => [k.key, { ...k, items: [] }]));
+  items.forEach(i => gruppen.get(listKategorie(i)).items.push(i));
+  return [...gruppen.values()]
+    .filter(g => g.items.length)
+    .map(g => ({ ...g, items: g.items.sort((a, b) => String(a.text).localeCompare(String(b.text), 'de', { sensitivity: 'base' })) }));
+}
+
+function listKategorieIcon(item) {
+  const k = LIST_KATEGORIEN.find(k => k.key === listKategorie(item));
+  return k ? k.icon : '🛒';
+}
+
+/* ══════════════════════════════════════════
+   EINKAUFSLISTE AKTUALISIEREN: eingekaufte Artikel verschwinden
+   ══════════════════════════════════════════ */
+// Abgehakte Artikel sind beim Abhaken schon gewertet (listRecordPurchase) und stehen in der
+// Einkaufs-Historie. Beim Aktualisieren werden sie deshalb einfach aus der Liste entfernt:
+//   • beim Neuladen der App (z. B. Browser-Aktualisieren)
+//   • durch Herunterziehen der Einkaufsliste (eigene Geste, funktioniert auch in der
+//     installierten App auf dem Handy, wo es kein Browser-Aktualisieren gibt)
+function listClearBought(opts = {}) {
+  const vorher = listItems.length;
+  listItems = listItems.filter(i => !i.done);
+  const weg = vorher - listItems.length;
+  if (weg) saveList();
+  if (opts.render !== false && document.getElementById('list-items')) renderList();
+  if (opts.toast) _showToast(weg ? `🧺 ${weg} eingekaufte${weg === 1 ? 'r Artikel' : ' Artikel'} entfernt` : '✓ Liste ist aktuell');
+  return weg;
+}
+
+// Beim Start der App
+try { listClearBought({ render: false }); } catch (e) { console.warn(e); }
+
+(function listPullToRefresh() {
+  const SCHWELLE = 70, MAX = 110;
+  let startY = null, dy = 0, area = null, ptr = null;
+
+  const listArea = t => {
+    const a = t && t.closest && t.closest('.scroll-area');
+    return a && a.querySelector('#list-items') ? a : null;
+  };
+  const setPtr = h => {
+    if (!ptr) return;
+    ptr.style.height = h + 'px';
+    ptr.classList.toggle('ready', h >= SCHWELLE);
+    ptr.querySelector('.list-ptr-text').textContent = h >= SCHWELLE ? 'Loslassen zum Aktualisieren' : 'Zum Aktualisieren ziehen';
+  };
+  const ende = () => {
+    if (ptr) {
+      const p = ptr;
+      p.style.transition = 'height .2s ease';
+      p.style.height = '0px';
+      setTimeout(() => p.remove(), 220);
+    }
+    startY = null; dy = 0; area = null; ptr = null;
+  };
+
+  document.addEventListener('touchstart', e => {
+    area = listArea(e.target);
+    if (!area || area.scrollTop > 0 || e.touches.length !== 1) { area = null; return; }
+    startY = e.touches[0].clientY;
+    dy = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (startY == null || !area) return;
+    dy = e.touches[0].clientY - startY;
+    if (dy <= 0 || area.scrollTop > 0) { if (ptr) setPtr(0); return; }
+    if (e.cancelable) e.preventDefault();
+    if (!ptr) {
+      ptr = document.createElement('div');
+      ptr.className = 'list-ptr';
+      ptr.innerHTML = '<span class="list-ptr-icon">↓</span><span class="list-ptr-text"></span>';
+      area.prepend(ptr);
+    }
+    setPtr(Math.min(MAX, dy * 0.55));
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (startY == null) return;
+    const ausloesen = ptr && ptr.classList.contains('ready');
+    ende();
+    if (ausloesen) listClearBought({ toast: true });
+  });
+  document.addEventListener('touchcancel', ende);
+})();
