@@ -1271,7 +1271,7 @@ const KB_KATEGORIEN = [
   { key: 'fruehstueck',  icon: '🥣', titel: 'Frühstück & Snacks', test: r => r.typ === 'fruehstueck' },
   { key: 'dessert',      icon: '🍰', titel: 'Süßes',            test: r => r.typ === 'dessert' },
   { key: 'korpus',       icon: '📖', titel: 'Open Recipe Corpus', test: r => !!r.lizenz,
-    hinweis: 'Rezepte aus Wikibooks/Wikisource, maschinell ins Deutsche übersetzt. Lizenz: CC BY-SA 4.0 – Quelle steht bei jedem Rezept.' },
+    hinweis: 'Rezepte aus dem polnischen Wikibooks-Kochbuch, maschinell übersetzt (teils auf Englisch). Lizenz: CC BY-SA 4.0 – Quelle steht bei jedem Rezept.' },
 ];
 
 function _kbKategorieRezepte(key) {
@@ -1479,9 +1479,11 @@ function _kbLizenzHtml(l) {
         <p>„${a(l.quelle || l.quelleSeite, l.titel || 'Originalrezept')}“${l.urheber ? ` von ${a(l.versionen, l.urheber)}` : ''},
           lizenziert unter ${a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'CC BY-SA 4.0')}.</p>
         <p>Über das ${a(l.korpusUrl, l.korpus || 'Open Recipe Corpus')}${l.korpusId ? ` (${_gmEsc(l.korpusId)})` : ''}.
-          ${l.maschinell ? `Maschinell aus dem ${_KB_SPRACHE[l.originalsprache] || 'Original'} übersetzt – kleine Fehler sind möglich.` : ''}</p>
+          ${l.sprache === 'en'
+            ? `Englische Fassung des Korpus${l.maschinell ? `, dort maschinell aus dem ${_KB_SPRACHE[l.originalsprache] || 'Original'} übersetzt – kleine Fehler sind möglich` : ''}.`
+            : l.maschinell ? `Maschinell aus dem ${_KB_SPRACHE[l.originalsprache] || 'Original'} übersetzt – kleine Fehler sind möglich.` : ''}</p>
         ${l.aenderungen ? `<p class="kb-license-changes">Änderungen: ${_gmEsc(l.aenderungen)}.</p>` : ''}
-        <p>Diese deutsche Fassung steht ebenfalls unter ${a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'CC BY-SA 4.0')}.
+        <p>Diese ${l.sprache === 'en' ? 'Fassung' : 'deutsche Fassung'} steht ebenfalls unter ${a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'CC BY-SA 4.0')}.
           ${l.versionen ? `Die Autorinnen und Autoren findest du in der ${a(l.versionen, 'Versionsgeschichte')}.` : ''}</p>
       </div>`;
 }
@@ -1514,6 +1516,7 @@ function _kbRecipeBodyHtml(r, info, inOverlay) {
       ${r.beschreibung ? `<p class="sub">${_gmEsc(r.beschreibung)}</p>` : ''}
       <div class="kb-chip-row">
         ${r.zeit ? `<span class="kb-chip">⏱️ ${r.zeit} Min.</span>` : ''}
+        ${r.lizenz?.sprache === 'en' ? '<span class="kb-chip kb-chip-lang">EN · auf Englisch</span>' : ''}
         ${(r.tags || []).includes('vegan') ? '<span class="kb-chip">🌱 vegan</span>' : (r.tags || []).includes('vegetarisch') ? '<span class="kb-chip">🥕 vegetarisch</span>' : ''}
         <span class="kb-chip kb-season--${info.status.key}">${info.status.dot} ${info.status.label}</span>
       </div>

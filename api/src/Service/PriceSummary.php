@@ -20,6 +20,7 @@ final class PriceSummary
         $recent = array_values(array_filter(
             $prices,
             static fn ($p) => ($p['currency'] ?? '') === $currency && ($p['date'] ?? '') >= $cutoff && ($p['price_per'] ?? null) === null
+                && !in_array($p['kind'] ?? '', ['online', 'catalog'], true)   // Supermarkt-Katalogpreise stehen in price_offers
         ));
         if (!$recent) {
             return null;

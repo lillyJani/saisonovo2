@@ -1,6 +1,6 @@
 <?php
 /**
- * GET api/scan.php?ean=4006381333931[&refresh=1]
+ * GET api/scan.php?ean=4006381333931[&refresh=1][&plz=10115]
  *
  * Liefert ein Produkt im Open-Food-Facts-Format ({"status":1,"product":{…}}), angereichert um
  * prices, price_summary, sustainability und _meta. Antwortcodes:
@@ -27,9 +27,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 
 $ean = (string) ($_GET['ean'] ?? $_GET['code'] ?? '');
 $refresh = isset($_GET['refresh']) && $_GET['refresh'] !== '0';
+$plz = preg_match('/^\d{5}$/', (string) ($_GET['plz'] ?? '')) ? (string) $_GET['plz'] : null;   // für lokale Marktpreise
 
 try {
-    $result = saisonovo_service()->lookup($ean, $refresh);
+    $result = saisonovo_service()->lookup($ean, $refresh, array_filter(['postcode' => $plz]));
     $record = $result['record'];
     saisonovo_json(200, [
         'status'   => 1,

@@ -8,6 +8,7 @@ use Saisonovo\Source\PriceSource;
 use Saisonovo\Source\ProductInfoSource;
 use Saisonovo\Support\Clock;
 use Saisonovo\Support\Ean;
+use Saisonovo\Support\Exception\PricePendingException;
 use Saisonovo\Support\Exception\ProductNotFoundException;
 use Saisonovo\Support\Exception\SourceException;
 
@@ -48,7 +49,8 @@ final class ProductService
      * @throws ProductNotFoundException
      * @throws SourceException  nur wenn nichts im Cache liegt und die Stammdatenquelle ausfällt
      */
-    public function lookup(string $rawEan, bool $forceRefresh = false): array
+    /** @param array{postcode?:string} $options */
+    public function lookup(string $rawEan, bool $forceRefresh = false, array $options = []): array
     {
         $ean = Ean::normalize($rawEan);
         $now = $this->clock->now();
@@ -70,6 +72,8 @@ final class ProductService
         $pricesAge = $now - (Clock::parse($meta['prices_fetched_at'] ?? null) ?? 0);
         $productStale = !$cached || $forceRefresh || $productAge > $this->ttl['product'];
         $pricesStale = !$cached || $forceRefresh || $pricesAge > $this->ttl['prices'];
+        // Asynchrone Quellen (z. B. Apify), deren Ergebnis noch aussteht, bei jedem Scan erneut fragen
+        $pending = $meta['pending_sources'] ?? [];
         $updated = false;
         $stale = false;
 
@@ -101,26 +105,40 @@ final class ProductService
         }
 
         // ── 2. Preise ───────────────────────────────────────────────────
-        if ($pricesStale) {
+        if ($pricesStale || $pending) {
             $context = [
                 'product_name' => $record['product']['product_name_de'] ?? $record['product']['product_name'] ?? null,
                 'brands'       => $record['product']['brands'] ?? null,
+                'quantity'     => $record['product']['quantity'] ?? null,
+                'postcode'     => $options['postcode'] ?? null,
             ];
             $oldPrices = $record['product']['prices'] ?? [];
             $newPrices = [];
             $okSources = [];
+            $nowPending = [];
             $failed = false;
             foreach ($this->priceSources as $src) {
                 if (!$src->isEnabled()) {
                     continue;
                 }
+                // Sind die Preise noch frisch, nur die ausstehenden Quellen abfragen
+                if (!$pricesStale && !in_array($src->name(), $pending, true)) {
+                    continue;
+                }
                 try {
                     $newPrices = array_merge($newPrices, $src->fetchPrices($ean, $context));
                     $okSources[] = $src->name();
+                } catch (PricePendingException $e) {
+                    $nowPending[] = $src->name();
+                    $warnings[] = $e->getMessage();
                 } catch (SourceException $e) {
                     $failed = true;
                     $warnings[] = $e->getMessage() . ' Preise dieser Quelle aus dem Cache.';
                 }
+            }
+            $meta['pending_sources'] = $nowPending;
+            if (!$nowPending) {
+                unset($meta['pending_sources']);
             }
             // Preise ausgefallener Quellen aus dem Cache behalten
             foreach ($oldPrices as $p) {
@@ -129,10 +147,12 @@ final class ProductService
                 }
             }
             $record['product']['prices'] = $this->dedupeAndTrim($newPrices);
-            if ($okSources) {
+            if ($okSources && $pricesStale) {
                 $meta['prices_fetched_at'] = $this->clock->iso($now);
                 $meta['sources']['prices'] = $okSources;
                 $pricesAge = 0;
+            } elseif ($okSources) {
+                $meta['sources']['prices'] = array_values(array_unique(array_merge($meta['sources']['prices'] ?? [], $okSources)));
             }
             if ($failed) {
                 $stale = true;
@@ -152,6 +172,7 @@ final class ProductService
             $now,
         );
         $record['product']['sustainability'] = self::sustainability($record['product']);
+        $record['product']['price_offers'] = self::offers($record['product']['prices'] ?? []);
         $record['schema_version'] = self::SCHEMA_VERSION;
         $record['code'] = $ean;
         $meta['updated_at'] = $updated ? $this->clock->iso($now) : ($meta['updated_at'] ?? $this->clock->iso($now));
@@ -170,6 +191,7 @@ final class ProductService
                 'prices_age_s'       => $pricesAge,
                 'product_fetched_at' => $meta['product_fetched_at'] ?? null,
                 'prices_fetched_at'  => $meta['prices_fetched_at'] ?? null,
+                'pending_sources'    => $meta['pending_sources'] ?? [],
             ],
             'warnings' => $warnings,
         ];
@@ -192,7 +214,30 @@ final class ProductService
             $out[] = $p;
         }
         usort($out, static fn ($a, $b) => strcmp((string) ($b['date'] ?? ''), (string) ($a['date'] ?? '')));
-        return array_slice($out, 0, $this->priceOptions['keep_entries']);
+        $online = array_values(array_filter($out, static fn ($p) => in_array($p['kind'] ?? '', ['online', 'catalog'], true)));
+        $community = array_values(array_filter($out, static fn ($p) => !in_array($p['kind'] ?? '', ['online', 'catalog'], true)));
+        return array_merge($online, array_slice($community, 0, $this->priceOptions['keep_entries']));
+    }
+
+    /**
+     * Aktuelle Supermarkt-Preise (Katalog/Online, z. B. REWE über Pepesto oder Apify):
+     * je Quelle der neueste Eintrag. Community-Preise (Open Prices) stehen in price_summary.
+     * @param list<array<string,mixed>> $prices
+     * @return list<array<string,mixed>>
+     */
+    public static function offers(array $prices): array
+    {
+        $out = [];
+        foreach ($prices as $p) {
+            if (!in_array($p['kind'] ?? '', ['online', 'catalog'], true)) {
+                continue;
+            }
+            $src = (string) ($p['source'] ?? '');
+            if (!isset($out[$src]) || strcmp((string) $p['date'], (string) $out[$src]['date']) > 0) {
+                $out[$src] = $p;
+            }
+        }
+        return array_values($out);
     }
 
     /**

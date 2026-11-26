@@ -67,7 +67,6 @@ Fehlerantworten haben die Form `{"status":0,"error":{"code":"invalid_ean|not_fou
 ```
 api/
   scan.php                 Endpunkt
-  price-upload.php         eigener Preis-Upload zu Open Prices (vorbereitet, standardmäßig aus)
   bootstrap.php            Autoloader + saisonovo_service(): hier werden Speicher & Quellen verdrahtet
   config.php               Einstellungen (Umgebungsvariablen), überschreibbar mit config.local.php
   src/Support/Ean.php      EAN-Prüfung/Normalisierung
@@ -79,9 +78,14 @@ api/
     ProductInfoSource.php    Schnittstelle Stammdaten
     OpenFoodFactsSource.php  Open Food Facts v2
     PriceSource.php          Schnittstelle Preise (+ gemeinsames Preisformat)
-    OpenPricesSource.php     Open Prices (aktiv) + uploadPrice()
+    OpenPricesSource.php     Open Prices (Community-Preise per EAN)
     AbstractCommercialPriceSource.php
-    PepestoReweSource.php · ApifyReweSource.php · PreiszeigerSource.php   (vorbereitet, ohne Schlüssel inaktiv)
+    PepestoReweSource.php    REWE-Katalog (Pepesto), Zuordnung per TextMatch
+    ApifyReweSource.php      REWE mit PLZ (Apify), asynchron
+    PreiszeigerSource.php    vorbereitet (Gerüst)
+  src/Support/TextMatch.php  Zuordnung ohne EAN (Name, Marke, Packungsgröße)
+  src/Repository/JsonFileStore.php  Speicher für Kataloge & laufende Abfragen (data/sources/)
+  cron.php                   täglicher Katalog-Abruf (nur Kommandozeile)
   src/Service/
     ProductService.php       Ablauf, Cache-Regeln, Zusammenführen
     PriceSummary.php         Preis-Übersicht
@@ -94,9 +98,25 @@ api/
 
 App und `ProductService` bleiben dabei unverändert.
 
-**Kommerzielle Anbieter aktivieren:** Schlüssel und Endpunkt in `config.local.php` eintragen (Vorlage:
-`config.local.example.php`). In jedem Adapter ist mit `TODO` markiert, was nach Vertragsabschluss anhand
-einer echten Beispielantwort angepasst werden muss.
+**Supermarkt-Preise (REWE) aktivieren:** Trag die Schlüssel in `config.local.php` ein (Vorlage: `config.local.example.php`).
+Ohne Schlüssel bleiben die Quellen aus und stellen keine Anfragen.
+
+| Quelle | Was | Einrichtung | Ablauf |
+|---|---|---|---|
+| **Pepesto** (`PepestoReweSource`) | Tagesaktueller REWE-Online-Katalog (shop.rewe.de, ca. 1.000–2.000 gängige Lebensmittel), Preise inkl. Angebote | Credits auf pepesto.com kaufen. Den Schlüssel erzeugst du mit `curl -X POST https://s.pepesto.com/api/link -H "Content-Type: application/json" -d '{"email":"…"}'` (er wird nur einmal angezeigt). Dann `'pepesto_rewe' => ['api_key' => 'pep_sk_…']` | `POST /api/catalog {"supermarket_domain":"shop.rewe.de"}` höchstens 1× pro Tag (Pepesto-Empfehlung). Der Katalog wird in `data/sources/` gespeichert. Per Cronjob vorladen: `php api/cron.php` |
+| **Apify REWE Market Scraper** (`ApifyReweSource`) | REWE-Suche mit **Postleitzahl** für lokale Marktpreise | Apify-Konto, Actor `scraping_empire/rewe-market` abonnieren, Token unter Console → Settings → API & Integrations. Dann `'apify_rewe' => ['token' => '…', 'zip_code' => '10115']` | Ein Lauf dauert länger als ein Scan, deshalb läuft er asynchron: Der Scan startet ihn und meldet `pending_sources`. Die App fragt nach 20/45/90 s erneut nach. Das Ergebnis gilt 24 h je Suchbegriff und PLZ |
+
+Beide Anbieter liefern **keine EAN**. Das gescannte Produkt wird deshalb über Marke, Name und Packungsgröße
+zugeordnet (`src/Support/TextMatch.php`). Übernommen werden nur Treffer mit einer Ähnlichkeit ab `min_match`
+(Standard 0,7). Eine andere Packungsgröße oder eine fehlende Marke führt immer zum Verwerfen. Den zugeordneten
+REWE-Artikelnamen zeigt die App mit an. Die Postleitzahl stellt man in der App unter Profil → Einstellungen →
+„Postleitzahl für Marktpreise“ ein. Sie wird als `&plz=` an `scan.php` übergeben.
+
+Antwort-Erweiterung: `product.price_offers[]` enthält je Supermarkt-Quelle den aktuellen Preis
+(`price, is_discounted, unit_price, matched_name, match_score, url, postcode`). `cache.pending_sources[]`
+listet Quellen, deren Ergebnis noch aussteht. `price_summary` enthält weiterhin nur die Community-Preise (Open Prices).
+
+**Preiszeiger** (ALDI/LIDL) ist weiterhin nur als Gerüst vorbereitet (`PreiszeigerSource`).
 
 **Umstieg auf SQLite/MySQL:**
 1. `PdoProductRepository implements ProductRepository` schreiben, z. B. Tabelle `products(ean PRIMARY KEY, record JSON, updated_at)` oder normalisiert mit einer eigenen Tabelle `prices`.
@@ -105,13 +125,6 @@ einer echten Beispielantwort angepasst werden muss.
 
 **Bulk-Import:** Für viele Produkte auf einmal eignen sich die OFF-Dumps (CSV/JSONL,
 https://world.openfoodfacts.org/data). Sie lassen sich per Skript über `ProductRepository::save()` einspielen.
-
-## Eigene Preise melden (vorbereitet)
-
-`POST api/price-upload.php` mit `{"ean","price","currency","date","location_osm_id","location_osm_type","proof_id"}`
-leitet einen Preis an Open Prices weiter. Zum Aktivieren in `config.local.php` eintragen:
-`'open_prices' => ['token' => '…', 'upload_enabled' => true]`. Den Token erzeugst du über `POST /api/v1/auth`.
-Vor dem Freischalten Missbrauchsschutz ergänzen (Anmeldung, Rate-Limit).
 
 ## Datenquellen & Lizenzen
 

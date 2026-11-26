@@ -18,6 +18,7 @@ $config = [
 
     // Cache
     'data_dir'        => $env('SAISONOVO_DATA_DIR', __DIR__ . '/data/products'),
+    'store_dir'       => $env('SAISONOVO_STORE_DIR', __DIR__ . '/data/sources'),   // Kataloge, laufende Abfragen
     'ttl' => [
         'product'   => (int) $env('SAISONOVO_TTL_PRODUCT', 30 * 24 * 3600), // Stammdaten (OFF): 30 Tage
         'prices'    => (int) $env('SAISONOVO_TTL_PRICES', 24 * 3600),       // Preise: 24 Stunden
@@ -50,24 +51,29 @@ $config = [
             'enabled'  => true,
             'base_url' => $env('OPEN_PRICES_BASE_URL', 'https://prices.openfoodfacts.org'),
             'page_size' => 50,
-            // Nur für den (optionalen) Preis-Upload aus der App nötig:
-            'token'    => $env('OPEN_PRICES_TOKEN'),
-            'upload_enabled' => (bool) $env('OPEN_PRICES_UPLOAD_ENABLED', false),
         ],
 
-        // ── Kommerzielle Preis-APIs (vorbereitet, ohne Schlüssel automatisch inaktiv) ──
+        // ── Kommerzielle Supermarkt-Preise (aktiv, sobald ein Schlüssel eingetragen ist) ──
+        // Pepesto: tagesaktueller REWE-Katalog. Schlüssel nach Kauf über POST https://s.pepesto.com/api/link
         'pepesto_rewe' => [
-            'enabled'  => false,
-            'api_key'  => $env('PEPESTO_API_KEY'),
-            // Endpunkt laut Pepesto-Dokumentation eintragen; {ean} wird ersetzt.
-            'endpoint' => $env('PEPESTO_ENDPOINT'),
+            'enabled'            => true,
+            'api_key'            => $env('PEPESTO_API_KEY'),            // pep_sk_…
+            'base_url'           => $env('PEPESTO_BASE_URL', 'https://s.pepesto.com/api'),
+            'supermarket_domain' => 'shop.rewe.de',
+            'catalog_ttl'        => 24 * 3600,                          // Pepesto empfiehlt max. 1 Abruf/Tag
+            'min_match'          => 0.7,                                // Mindest-Ähnlichkeit für einen Treffer
+            'timeout'            => 30,
         ],
+        // Apify REWE Market Scraper: lokale REWE-Preise per Postleitzahl
         'apify_rewe' => [
-            'enabled'  => false,
-            'token'    => $env('APIFY_TOKEN'),
-            // Actor-ID des REWE-Scrapers aus dem Apify Store, z. B. 'benutzer~rewe-scraper'
-            'actor_id' => $env('APIFY_REWE_ACTOR'),
-            'postcode' => $env('APIFY_REWE_POSTCODE', '10115'),
+            'enabled'    => true,
+            'token'      => $env('APIFY_TOKEN'),
+            'actor_id'   => $env('APIFY_REWE_ACTOR', 'scraping_empire~rewe-market'),
+            'base_url'   => $env('APIFY_BASE_URL', 'https://api.apify.com/v2'),
+            'zip_code'   => $env('APIFY_REWE_ZIP', '51063'),            // Standard-PLZ, wenn die App keine schickt
+            'max_pages'  => 1,
+            'result_ttl' => 24 * 3600,
+            'min_match'  => 0.7,
         ],
         'preiszeiger' => [
             'enabled'  => false,

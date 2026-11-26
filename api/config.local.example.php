@@ -8,11 +8,13 @@ return [
     // 'ttl' => ['prices' => 12 * 3600],
 
     'sources' => [
-        // Eigenen Preis-Upload zu Open Prices erlauben (Token über POST /api/v1/auth erzeugen):
-        // 'open_prices' => ['token' => '…', 'upload_enabled' => true],
 
-        // 'pepesto_rewe' => ['enabled' => true, 'api_key' => '…', 'endpoint' => 'https://…/{ean}'],
-        // 'apify_rewe'   => ['enabled' => true, 'token' => '…', 'actor_id' => 'benutzer~rewe-scraper', 'postcode' => '10115'],
+        // Pepesto (REWE-Katalog): Schlüssel nach dem Kauf über
+        //   curl -X POST https://s.pepesto.com/api/link -H "Content-Type: application/json" -d '{"email":"…"}'
+        // 'pepesto_rewe' => ['api_key' => 'pep_sk_…'],
+        //
+        // Apify REWE Market Scraper (lokale Preise): Token unter Apify Console → Settings → API & Integrations
+        // 'apify_rewe' => ['token' => 'apify_api_…', 'zip_code' => '10115'],
         // 'preiszeiger'  => ['enabled' => true, 'api_key' => '…', 'endpoint' => 'https://…?gtin={ean}'],
     ],
 ];

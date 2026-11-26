@@ -27,9 +27,9 @@ class HttpClient
      * @param array<string,string> $headers
      * @param int[] $acceptStatus  Statuscodes, die nicht als Fehler gelten (z. B. 404 bei "nicht gefunden")
      */
-    public function getJson(string $url, array $headers = [], array $acceptStatus = [200]): HttpResponse
+    public function getJson(string $url, array $headers = [], array $acceptStatus = [200], ?int $timeout = null): HttpResponse
     {
-        return $this->request('GET', $url, null, $headers, $acceptStatus);
+        return $this->request('GET', $url, null, $headers, $acceptStatus, $timeout);
     }
 
     /**
@@ -39,17 +39,17 @@ class HttpClient
      * @param array<string,string> $headers
      * @param int[] $acceptStatus
      */
-    public function postJson(string $url, array $body, array $headers = [], array $acceptStatus = [200, 201]): HttpResponse
+    public function postJson(string $url, array $body, array $headers = [], array $acceptStatus = [200, 201], ?int $timeout = null): HttpResponse
     {
         $headers['Content-Type'] = 'application/json';
-        return $this->request('POST', $url, json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $headers, $acceptStatus);
+        return $this->request('POST', $url, json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), $headers, $acceptStatus, $timeout);
     }
 
     /**
      * @param array<string,string> $headers
      * @param int[] $acceptStatus
      */
-    private function request(string $method, string $url, ?string $body, array $headers, array $acceptStatus): HttpResponse
+    private function request(string $method, string $url, string|array|null $body, array $headers, array $acceptStatus, ?int $timeout = null): HttpResponse
     {
         $ch = curl_init($url);
         $headerLines = ['Accept: application/json'];
@@ -61,7 +61,7 @@ class HttpClient
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 3,
             CURLOPT_CONNECTTIMEOUT => $this->connectTimeout,
-            CURLOPT_TIMEOUT        => $this->timeout,
+            CURLOPT_TIMEOUT        => $timeout ?? $this->timeout,   // z. B. länger für große Kataloge
             CURLOPT_USERAGENT      => $this->userAgent,
             CURLOPT_HTTPHEADER     => $headerLines,
             CURLOPT_ENCODING       => '',            // gzip/deflate annehmen
@@ -77,7 +77,7 @@ class HttpClient
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         curl_close($ch);
 
-        $host = parse_url($url, PHP_URL_HOST) ?: $url;
+        $host = parse_url($url, PHP_URL_HOST) ?: 'externe API';   // nie die volle URL (kann Tokens enthalten)
         if ($errno !== 0) {
             $timeout = in_array($errno, [CURLE_OPERATION_TIMEDOUT, 28], true);
             throw new SourceException(

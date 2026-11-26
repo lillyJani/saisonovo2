@@ -110,6 +110,13 @@
             <div class="toggle" id="dark-mode-toggle" onclick="toggleDarkMode()"></div>
           </div>
         </div>
+
+        <h2>Einkaufen</h2>
+        <div class="card pf-plz-card">
+          <label class="pf-plz-label" for="edit-plz">Postleitzahl für Marktpreise</label>
+          <input type="text" id="edit-plz" class="edit-input" inputmode="numeric" maxlength="5" autocomplete="postal-code" placeholder="z. B. 10115" />
+          <p class="sub pf-plz-hint">Damit zeigt der Scanner REWE-Preise aus deiner Nähe (sobald im Backend ein Apify-Zugang eingerichtet ist).</p>
+        </div>
           </div>
           <div class="pf-settings-foot">
             <button class="btn-primary" onclick="saveProfile()">Speichern</button>

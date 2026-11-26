@@ -1,0 +1,31 @@
+{
+  "_hinweis": "Einstellungen für den Rezept-Import aus dem Open Recipe Corpus. Standard: englische Texte ohne Übersetzung (provider \"none\", kein Schlüssel nötig). Für Deutsch: provider \"deepl\"/\"openai\" und fromLang \"pl\"; API-Schlüssel als Umgebungsvariable (DEEPL_API_KEY bzw. OPENAI_API_KEY), nie in diese Datei.",
+  "api": "https://recipes.airon.app",
+  "corpusDir": null,
+  "fromLang": "en",
+  "provider": "none",
+  "openaiModel": "gpt-4o-mini",
+  "limit": 150,
+  "filters": {
+    "source": "pl-wikibooks",
+    "categories": [
+      "dinner",
+      "lunch",
+      "breakfast",
+      "snack",
+      "dessert"
+    ],
+    "excludeDishTypes": [
+      "preserve",
+      "drink",
+      "sauce",
+      "other"
+    ],
+    "tags": [],
+    "maxTotalMinutes": 120
+  },
+  "skipWarnings": false,
+  "output": "../../rezepte-orc.json",
+  "report": "./qa-report.json",
+  "cacheDir": "./cache"
+}

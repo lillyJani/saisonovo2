@@ -57,13 +57,12 @@ function saisonovo_service(): \Saisonovo\Service\ProductService
     $c = saisonovo_config();
     $http = new \Saisonovo\Http\HttpClient($c['user_agent'], $c['http']['connect_timeout'], $c['http']['timeout']);
     $s = $c['sources'];
+    $store = new \Saisonovo\Repository\JsonFileStore($c['store_dir']);
 
     $priceSources = [
-        new \Saisonovo\Source\OpenPricesSource(
-            $http, $s['open_prices']['base_url'], (int) $s['open_prices']['page_size'], (bool) $s['open_prices']['enabled'],
-        ),
-        new \Saisonovo\Source\PepestoReweSource($http, $s['pepesto_rewe']),
-        new \Saisonovo\Source\ApifyReweSource($http, $s['apify_rewe']),
+        saisonovo_open_prices($http),
+        new \Saisonovo\Source\PepestoReweSource($http, $s['pepesto_rewe'], $store),
+        new \Saisonovo\Source\ApifyReweSource($http, $s['apify_rewe'], $store),
         new \Saisonovo\Source\PreiszeigerSource($http, $s['preiszeiger']),
     ];
 
@@ -74,4 +73,14 @@ function saisonovo_service(): \Saisonovo\Service\ProductService
         $c['ttl'],
         $c['prices'],
     );
+}
+
+
+/** Open Prices (Community-Preise per EAN). */
+function saisonovo_open_prices(?\Saisonovo\Http\HttpClient $http = null): \Saisonovo\Source\OpenPricesSource
+{
+    $c = saisonovo_config();
+    $op = $c['sources']['open_prices'];
+    $http ??= new \Saisonovo\Http\HttpClient($c['user_agent'], $c['http']['connect_timeout'], $c['http']['timeout']);
+    return new \Saisonovo\Source\OpenPricesSource($http, $op['base_url'], (int) $op['page_size'], (bool) $op['enabled']);
 }

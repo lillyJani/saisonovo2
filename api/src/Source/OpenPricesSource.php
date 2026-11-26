@@ -18,8 +18,6 @@ final class OpenPricesSource implements PriceSource
         private readonly string $baseUrl = 'https://prices.openfoodfacts.org',
         private readonly int $pageSize = 50,
         private readonly bool $enabled = true,
-        private readonly ?string $token = null,
-        private readonly bool $uploadEnabled = false,
     ) {
     }
 
@@ -74,37 +72,5 @@ final class OpenPricesSource implements PriceSource
             ];
         }
         return $out;
-    }
-
-    public function canUpload(): bool
-    {
-        return $this->uploadEnabled && $this->token !== null && $this->token !== '';
-    }
-
-    /**
-     * Vorbereitung: eigenen Preis aus der App an Open Prices melden.
-     * Erfordert ein Open-Prices-Konto (Token über POST /api/v1/auth) und in der Regel einen
-     * Beleg (proof_id: vorher Foto von Kassenbon/Preisschild über POST /api/v1/proofs/upload hochladen)
-     * sowie den Markt als OpenStreetMap-Objekt (location_osm_id/location_osm_type).
-     *
-     * @param array{price: float, currency: string, date: string, location_osm_id: int, location_osm_type: string, proof_id?: int, price_is_discounted?: bool} $price
-     * @return array<string,mixed>  angelegter Preis laut API
-     */
-    public function uploadPrice(string $ean, array $price): array
-    {
-        if (!$this->canUpload()) {
-            throw new SourceException('Preis-Upload ist nicht eingerichtet (Token in config.local.php fehlt).', $this->name());
-        }
-        $body = ['type' => 'PRODUCT', 'product_code' => $ean] + $price;
-        try {
-            $res = $this->http->postJson(
-                rtrim($this->baseUrl, '/') . '/api/v1/prices',
-                $body,
-                ['Authorization' => 'Bearer ' . $this->token],
-            );
-        } catch (SourceException $e) {
-            throw $e->withSource($this->name());
-        }
-        return $res->data;
     }
 }

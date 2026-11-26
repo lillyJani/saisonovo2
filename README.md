@@ -292,6 +292,9 @@ Sie wird mit `tools/rezepte-import/import.mjs` erzeugt. Das Skript
 3. prüft Zutaten, Mengen, Temperaturen und Zeiten und
 4. speichert sie als JSON.
 
+Ausgeliefert ist `rezepte-orc.json` mit 150 Rezepten in der **englischen** Fassung des Korpus
+(ohne eigene Übersetzung, gekennzeichnet mit „EN · auf Englisch“). Mit einem DeepL- oder
+OpenAI-Schlüssel kann das Skript sie auch ins Deutsche übersetzen.
 Die Rezepte erscheinen im Kochbuch, im Rezept des Tages und in der Kategorie „Open Recipe Corpus“.
 Jedes Rezept zeigt den Kasten „Quelle & Lizenz“ mit Originalquelle, Urhebern bzw.
 Versionsgeschichte, Lizenzlink, Änderungen und dem Hinweis, dass die deutsche Fassung ebenfalls
