@@ -8,7 +8,7 @@ Mobile Web-App für nachhaltiges Einkaufen und Kochen — mit Saisonkalender, Ba
 
 Die App läuft direkt im Browser, kein Download nötig:
 
-👉 **[lillyjani.github.io/saisonovo](https://lillyjani.github.io/saisonovo2/)**
+👉 **[lillyjani.github.io/saisonovo](https://lillyjani.github.io/saisonovo/)**
 
 ### Als App zum Homescreen hinzufügen
 
@@ -282,20 +282,15 @@ npm start
 | GET | `/api/stats` | Statistiken |
 | GET | `/api/recipe` | Rezept per URL importieren (JSON-LD-Extraktion) |
 
-## Rezepte aus dem Open Recipe Corpus (CC BY-SA 4.0)
+## Rezepte aus dem Wikibooks-Kochbuch (CC BY-SA 4.0)
 
-Zusätzlich zu `rezepte.json` lädt das Kochbuch die Datei `rezepte-orc.json`, sofern sie vorhanden ist.
-Sie wird mit `tools/rezepte-import/import.mjs` erzeugt. Das Skript
+Zusätzlich zu `rezepte.json` lädt das Kochbuch `rezepte-wikibooks.json`: 547 deutsche Rezepte aus
+dem [Wikibooks-Kochbuch](https://de.wikibooks.org/wiki/Kochbuch).
 
-1. ruft die Rezepte über die API des [Open Recipe Corpus](https://github.com/Rippy1911/open-recipe-corpus) ab,
-2. übersetzt sie mit DeepL oder OpenAI ins Deutsche,
-3. prüft Zutaten, Mengen, Temperaturen und Zeiten und
-4. speichert sie als JSON.
+- Sie erscheinen im Kochbuch, in den Kategorien und in der eigenen Kategorie „Wikibooks-Kochbuch“.
+- Jedes Rezept zeigt den Kasten „Quelle & Lizenz“: Originalseite, Versionsgeschichte mit den
+  Autorinnen und Autoren, CC BY-SA 4.0 mit Link und die Änderungen.
+- Saison-Ampel und CO₂-Wert werden wie bei den eigenen Rezepten live berechnet. Ein Zwischenspeicher
+  pro Zutat hält die Sortierung trotz der vielen Rezepte schnell.
+- Aktualisieren: `python3 tools/wikibooks-kochbuch/import.py` (siehe Anleitung dort).
 
-Ausgeliefert ist `rezepte-orc.json` mit 150 Rezepten in der **englischen** Fassung des Korpus
-(ohne eigene Übersetzung, gekennzeichnet mit „EN · auf Englisch“). Mit einem DeepL- oder
-OpenAI-Schlüssel kann das Skript sie auch ins Deutsche übersetzen.
-Die Rezepte erscheinen im Kochbuch, im Rezept des Tages und in der Kategorie „Open Recipe Corpus“.
-Jedes Rezept zeigt den Kasten „Quelle & Lizenz“ mit Originalquelle, Urhebern bzw.
-Versionsgeschichte, Lizenzlink, Änderungen und dem Hinweis, dass die deutsche Fassung ebenfalls
-unter CC BY-SA 4.0 steht. Anleitung: [`tools/rezepte-import/README.md`](tools/rezepte-import/README.md).

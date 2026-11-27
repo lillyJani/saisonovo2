@@ -945,8 +945,8 @@ const KB = {
 
 async function kbLoad() {
   if (KB.rezepte) return KB.rezepte;
-  // rezepte.json = eigene Saisonovo-Rezepte; rezepte-orc.json = übersetzte Rezepte aus dem
-  // Open Recipe Corpus (CC BY-SA 4.0, erzeugt von tools/rezepte-import). Fehlt die zweite Datei, ist das okay.
+  // rezepte.json = eigene Saisonovo-Rezepte; rezepte-wikibooks.json = Rezepte aus dem deutschen
+  // Wikibooks-Kochbuch (CC BY-SA 4.0, mit Quellenangabe pro Rezept). Fehlt die zweite Datei, ist das okay.
   const laden = async (datei, pflicht) => {
     try {
       const res = await fetch(datei, { cache: 'no-store' });
@@ -957,9 +957,10 @@ async function kbLoad() {
       return [];
     }
   };
-  const [eigene, korpus] = await Promise.all([laden('rezepte.json', true), laden('rezepte-orc.json', false)]);
+  const [eigene, wiki] = await Promise.all([laden('rezepte.json', true), laden('rezepte-wikibooks.json', false)]);
   const ids = new Set(eigene.map(r => r.id));
-  KB.rezepte = [...eigene, ...korpus.filter(r => r && r.id && r.titel && !ids.has(r.id) && r.lizenz)];
+  const titel = new Set(eigene.map(r => (r.titel || '').trim().toLowerCase()));   // gleiche Gerichte nicht doppelt
+  KB.rezepte = [...eigene, ...wiki.filter(r => r && r.id && r.titel && r.lizenz && !ids.has(r.id) && !titel.has(r.titel.trim().toLowerCase()))];
   return KB.rezepte;
 }
 kbLoad();
@@ -992,14 +993,30 @@ function _kbDataReady() {
 // Vorratszutaten haben keine Saison. Deshalb hier vorab aussortieren.
 const _KB_VORRAT_RE = /(kerne|essig|saft|sirup|mus\b|brühe|öl\b|dose|getrocknet|tk\b|tiefgekühlt|pulver|mehl|flocken|paste|kraut\b|meerrettich)/i;
 
+// Zwischenspeicher pro Zutatenname (bei vielen Rezepten wiederholen sich die Zutaten ständig).
+// Erst füllen, wenn die Daten geladen sind – sonst würde ein „kein Treffer“ dauerhaft gemerkt.
+const _KB_MATCH_CACHE = new Map(), _KB_FP_CACHE = new Map(), _KB_SCORE_CACHE = new Map();
+function _kbCached(cache, key, fn) {
+  if (cache.has(key)) return cache.get(key);
+  const v = fn();
+  if (typeof _saisondaten !== 'undefined' && _saisondaten && typeof _ernaehrung !== 'undefined' && _ernaehrung) cache.set(key, v);
+  return v;
+}
+
 function _kbMatch(name) {
   if (!name || _KB_VORRAT_RE.test(name)) return null;
-  return _matchSaisondatenByName(name);
+  return _kbCached(_KB_MATCH_CACHE, name, () => _matchSaisondatenByName(name));
 }
 
 function _kbFootprint(name) {
   if (!name || _KB_VORRAT_RE.test(name)) return null;
-  return _getFootprintData(name, []);
+  return _kbCached(_KB_FP_CACHE, name, () => _getFootprintData(name, []));
+}
+
+// Saison-Ampel je Produkt und Monat
+function _kbSaisonScore(produkt) {
+  const key = produkt.id + '@' + new Date().getMonth();
+  return _kbCached(_KB_SCORE_CACHE, key, () => _calculateSaisonScore(produkt, []));
 }
 
 // Saison-Ampel + CO₂ eines Rezepts für den aktuellen Monat.
@@ -1014,7 +1031,7 @@ function kbRecipeInfo(r, portionen) {
     let ampel = null;
     if (produkt) {
       saisonZutaten += 1;
-      const score = _calculateSaisonScore(produkt, []);
+      const score = _kbSaisonScore(produkt);
       ampel = score?.ampel || 'rot';
       if (ampel === 'gruen') { gruen += 1; summe += 1; }
       else if (ampel === 'gelb') { gelb += 1; summe += 0.5; }
@@ -1171,7 +1188,7 @@ function _kbCardHtml(r, info, favs, inOverlay) {
       <div class="kb-card-thumb span-2 kb-thumb--${info.status.key}">${r.emoji || '🍽️'}${r.bild ? `<img class="kb-thumb-img" src="${_gmEsc(r.bild)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</div>
       <div class="kb-card-body span-6">
         <div class="kb-card-title">${_gmEsc(r.titel)}</div>
-        <div class="kb-card-meta">${r.zeit ? `${r.zeit} Min. · ` : ''}${r.portionen || '?'} Port. ${tags.join('')}</div>
+        <div class="kb-card-meta">${[r.zeit ? `${r.zeit} Min.` : '', r.portionen ? `${r.portionen} Port.` : ''].filter(Boolean).join(' · ')} ${tags.join('')}</div>
         <div class="kb-card-season kb-season--${info.status.key}">${info.status.dot} ${saisonText}</div>
       </div>
       ${r.eigene
@@ -1270,8 +1287,8 @@ const KB_KATEGORIEN = [
   { key: 'salat',        icon: '🥗', titel: 'Salate',           test: r => r.typ === 'salat' },
   { key: 'fruehstueck',  icon: '🥣', titel: 'Frühstück & Snacks', test: r => r.typ === 'fruehstueck' },
   { key: 'dessert',      icon: '🍰', titel: 'Süßes',            test: r => r.typ === 'dessert' },
-  { key: 'korpus',       icon: '📖', titel: 'Open Recipe Corpus', test: r => !!r.lizenz,
-    hinweis: 'Rezepte aus dem polnischen Wikibooks-Kochbuch, maschinell übersetzt (teils auf Englisch). Lizenz: CC BY-SA 4.0 – Quelle steht bei jedem Rezept.' },
+  { key: 'wikibooks',    icon: '📖', titel: 'Wikibooks-Kochbuch', test: r => !!r.lizenz,
+    hinweis: 'Rezepte aus dem freien Wikibooks-Kochbuch (de.wikibooks.org). Lizenz: CC BY-SA 4.0 – die Quelle steht bei jedem Rezept.' },
 ];
 
 function _kbKategorieRezepte(key) {
@@ -1359,7 +1376,7 @@ function kbOvRender(keepScroll) {
     body.innerHTML = `
       <h2 class="kb-ov-title">Kategorien</h2>
       <div class="g9 kb-cat-grid">
-        ${KB_KATEGORIEN.filter(k => k.key !== 'korpus' || _kbKategorieRezepte('korpus').length).map(k => {
+        ${KB_KATEGORIEN.filter(k => k.key !== 'wikibooks' || _kbKategorieRezepte('wikibooks').length).map(k => {
           const n = _kbKategorieRezepte(k.key).length;
           return `<button class="kb-cat span-3" onclick="kbOvOpen('kategorie','${k.key}')" ${n ? '' : 'disabled'}>
             <span class="kb-cat-icon">${k.icon}</span>
@@ -1467,24 +1484,18 @@ function _kbCookedToday(id) {
   return s.cooked.log.some(l => l.id === id && l.d === today);
 }
 
-// Namensnennung für Rezepte aus dem Open Recipe Corpus (CC BY-SA 4.0):
-// Titel + Urheber, Link zur Originalquelle (Revision), Versionsgeschichte, Lizenz mit Link, Änderungen.
-const _KB_SPRACHE = { pl: 'Polnischen', en: 'Englischen' };
+// Namensnennung für Rezepte aus dem Wikibooks-Kochbuch (CC BY-SA 4.0):
+// Link zur Originalseite (genaue Version), Urheber über die Versionsgeschichte, Lizenz mit Link, Änderungen.
 function _kbLizenzHtml(l) {
   const a = (url, text) => url && /^https:\/\//.test(url)
     ? `<a href="${_gmEsc(url)}" target="_blank" rel="noopener">${_gmEsc(text)}</a>` : _gmEsc(text);
+  const lizenz = a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', l.name || 'CC BY-SA 4.0');
   return `
       <div class="kb-license card">
         <h3>Quelle &amp; Lizenz</h3>
-        <p>„${a(l.quelle || l.quelleSeite, l.titel || 'Originalrezept')}“${l.urheber ? ` von ${a(l.versionen, l.urheber)}` : ''},
-          lizenziert unter ${a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'CC BY-SA 4.0')}.</p>
-        <p>Über das ${a(l.korpusUrl, l.korpus || 'Open Recipe Corpus')}${l.korpusId ? ` (${_gmEsc(l.korpusId)})` : ''}.
-          ${l.sprache === 'en'
-            ? `Englische Fassung des Korpus${l.maschinell ? `, dort maschinell aus dem ${_KB_SPRACHE[l.originalsprache] || 'Original'} übersetzt – kleine Fehler sind möglich` : ''}.`
-            : l.maschinell ? `Maschinell aus dem ${_KB_SPRACHE[l.originalsprache] || 'Original'} übersetzt – kleine Fehler sind möglich.` : ''}</p>
+        <p>${a(l.quelle || l.quelleSeite, 'Originalrezept')} aus dem ${a(l.sammlungUrl, l.sammlung || 'Wikibooks-Kochbuch')}${l.urheber ? ` von ${a(l.versionen, l.urheber)}` : ''}, lizenziert unter ${lizenz}.</p>
         ${l.aenderungen ? `<p class="kb-license-changes">Änderungen: ${_gmEsc(l.aenderungen)}.</p>` : ''}
-        <p>Diese ${l.sprache === 'en' ? 'Fassung' : 'deutsche Fassung'} steht ebenfalls unter ${a(l.url || 'https://creativecommons.org/licenses/by-sa/4.0/deed.de', 'CC BY-SA 4.0')}.
-          ${l.versionen ? `Die Autorinnen und Autoren findest du in der ${a(l.versionen, 'Versionsgeschichte')}.` : ''}</p>
+        <p>Diese Fassung steht ebenfalls unter ${lizenz}.${l.versionen ? ` Alle Autorinnen und Autoren findest du in der ${a(l.versionen, 'Versionsgeschichte')}.` : ''}</p>
       </div>`;
 }
 
@@ -1516,7 +1527,6 @@ function _kbRecipeBodyHtml(r, info, inOverlay) {
       ${r.beschreibung ? `<p class="sub">${_gmEsc(r.beschreibung)}</p>` : ''}
       <div class="kb-chip-row">
         ${r.zeit ? `<span class="kb-chip">⏱️ ${r.zeit} Min.</span>` : ''}
-        ${r.lizenz?.sprache === 'en' ? '<span class="kb-chip kb-chip-lang">EN · auf Englisch</span>' : ''}
         ${(r.tags || []).includes('vegan') ? '<span class="kb-chip">🌱 vegan</span>' : (r.tags || []).includes('vegetarisch') ? '<span class="kb-chip">🥕 vegetarisch</span>' : ''}
         <span class="kb-chip kb-season--${info.status.key}">${info.status.dot} ${info.status.label}</span>
       </div>
